@@ -1,23 +1,18 @@
 <?php
-
+require __DIR__.'/./cred.php';
  //Database connection in pdo
  class DB{
       
       private static $con;
       private static $instance= null;
-      public string $host='127.0.0.1';
-      private string $db='';
-      private string $port='3306';
-      private string $user='root';
-      private string $passwd='gladysmElvis@1';
-
+      
       private function __construct()
-      {
+      {     $cred=info();
            //database connection setup in modes 
            try{
-                self::$con=new PDO("mysql:host=127.0.0.1;dbname=media;port=3306",'root','gladysmElvis@1');
+                self::$con=new PDO("mysql:host={$cred["HOST"]};dbname={$cred["DB"]};port={$cred["PORT"]}",$cred['USER'],$cred['PASWD']);
                 self::$con->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
-               //echo 'connection successful';
+              // echo 'connection successful';
            }
            catch(PDOException $e){
                  error_log('connection failed because '.$e->getMessage());

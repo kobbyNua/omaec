@@ -1,4 +1,11 @@
 <?php
+
+
+require_once __DIR__.'/../../libs/Conns.php';
+//use Kreait\Firebase\JWT\IdTokenVerifier;
+//use Kreait\Firebase\JWT\Error\IdTokenVerificationFailed;
+
+$api=info();
     /*ini_set('display_error', 1);
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
@@ -41,6 +48,23 @@
     $resourcesId =$uriSegment[1]?? null;
     
     $resourceFile = __DIR__.'/resources/' . $resource .'.php';
+    $auth = require_once __DIR__.'/resources/verify.php';
+    $GLOBALS['auth'] = is_array($auth) ? $auth : ['authenticated' => false, 'guest' => true, 'uid' => null, 'name' => null, 'email' => null];
+
+    $isGuest = !empty($GLOBALS['auth']['guest']) || empty($GLOBALS['auth']['authenticated']);
+    $isUserResource = in_array($resource, ['user', 'users'], true);
+
+    if ($isGuest && $isUserResource) {
+        http_response_code(401);
+        echo json_encode(['status' => false, 'message' => 'Login required to access user resources']);
+        exit;
+    }
+
+    if ($isGuest && ($_SERVER['REQUEST_METHOD'] !== 'GET' || !empty($resourcesId))) {
+        http_response_code(401);
+        echo json_encode(['status' => false, 'message' => 'Guests can only access GET requests without an id']);
+        exit;
+    }
     
     if(!empty($resource) && file_exists($resourceFile)){
            $method = $_SERVER['REQUEST_METHOD'];
