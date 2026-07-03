@@ -31,7 +31,7 @@
          }
 
          public function findAll():array{
-              return $this->stmt->fetchAll($this->pdo::FETCH_ASSOC);
+              return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
          }
 
 

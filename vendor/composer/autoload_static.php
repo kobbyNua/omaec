@@ -30,6 +30,7 @@ class ComposerStaticInitd9371a685486e8cc737cbd1f3accdfff
             'Psr\\Clock\\' => 10,
             'Psr\\Cache\\' => 10,
             'PhpOption\\' => 10,
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'L' => 
         array (
@@ -94,6 +95,10 @@ class ComposerStaticInitd9371a685486e8cc737cbd1f3accdfff
         'PhpOption\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption',
+        ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
         'Lcobucci\\JWT\\' => 
         array (

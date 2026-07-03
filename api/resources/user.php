@@ -19,6 +19,12 @@
                 break;
             }
 
+            if (empty($auth['is_admin'])) {
+                http_response_code(403);
+                echo json_encode(['status' => false, 'message' => 'Only the admin account can create users']);
+                break;
+            }
+
             http_response_code(200);
             $data = json_decode(file_get_contents('php://input'), true);
             $user->addUsers($data, $auth);

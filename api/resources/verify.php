@@ -6,6 +6,7 @@ use Kreait\Firebase\JWT\Error\IdTokenVerificationFailed;
 
 $api = info();
 $projectId = $api['API_KEY'] ?? '';
+$adminEmail = trim((string) ($api['ADMIN_EMAIL'] ?? ''));
 
 $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 
@@ -29,6 +30,7 @@ if (empty($projectId) || empty($idToken)) {
         'uid' => null,
         'name' => null,
         'email' => null,
+        'is_admin' => false,
         'message' => 'No token provided. Accessing as guest.'
     ];
 }
@@ -41,6 +43,7 @@ try {
     $uid = $payload['sub'] ?? null;
     $name = $payload['name'] ?? null;
     $email = $payload['email'] ?? null;
+    $isAdmin = !empty($adminEmail) && !empty($email) && strcasecmp((string) $email, $adminEmail) === 0;
 
     return [
         'authenticated' => !empty($uid),
@@ -48,6 +51,7 @@ try {
         'uid' => $uid,
         'name' => $name,
         'email' => $email,
+        'is_admin' => $isAdmin,
         'message' => 'Authenticated user'
     ];
 } catch (IdTokenVerificationFailed $e) {
@@ -57,6 +61,7 @@ try {
         'uid' => null,
         'name' => null,
         'email' => null,
+        'is_admin' => false,
         'message' => 'Invalid token. Accessing as guest.'
     ];
 }

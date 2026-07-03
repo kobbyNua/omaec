@@ -14,12 +14,25 @@
         break;
         case "POST":
                http_response_code(200);
-               $data=json_decode(file_get_contents('php://input'),true);
+               $rawData = file_get_contents('php://input');
+               $jsonData = json_decode($rawData, true);
+               $data = is_array($jsonData) ? $jsonData : [];
+
+               if (!empty($_POST)) {
+                   $data = array_merge($data, $_POST);
+               }
+
+               if (!empty($_FILES)) {
+                   $data = array_merge($data, $_FILES);
+               }
+
                $banner->addBanner($data);
         break;
         case 'PUT':
                 http_response_code(200);
-                $data=json_decode(file_get_contents('php://input'),true);
+                $rawData = file_get_contents('php://input');
+                $jsonData = json_decode($rawData, true);
+                $data = is_array($jsonData) ? $jsonData : [];
                 $banner->editBanner($data,'id=>:id',['id'=>$resourcesId]);
         break;
         default:
