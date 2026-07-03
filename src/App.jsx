@@ -13,6 +13,7 @@ import Blog from './pages/blog/blog.jsx';
 import LoginPage from './pages/login/login.jsx';
 import AdminPage from './pages/admin/admin.jsx';
 import UserPage from './pages/user/user.jsx';
+import ResetPassword from './pages/admin/reset-password';
 import './App.css';
 import { useState ,useEffect, useRef } from 'react';
 import './styles.css';
@@ -234,6 +235,7 @@ function App() {
                <Route path="/blog" element={<Blog />}/>
                <Route path="/contact" element={<Contact />}/>
                <Route path="/login" element={<LoginPage />} />
+               <Route path="/reset-password" element={<ResetPassword />} />
                <Route path="/admin" element={<AdminPage />} />
                <Route path="/user" element={<UserPage />} />
         </Routes>

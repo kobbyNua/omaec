@@ -28,6 +28,29 @@
     object-fit: cover;
 }
 
+.carousel-caption {
+    position: absolute;
+    left: 2rem;
+    bottom: 2rem;
+    max-width: 45%;
+    color: #fff;
+    text-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.carousel-caption h2 {
+    margin: 0 0 0.6rem;
+    font-size: clamp(1.5rem, 2.5vw, 3rem);
+    line-height: 1.05;
+}
+
+.carousel-caption p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
 /* Carousel Indicators */
 .carousel-indicators {
     position: absolute;
@@ -49,6 +72,36 @@
     padding: 0;
 }
 
+.carousel-add-button {
+    position: absolute;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 2rem;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+    z-index: 2;
+}
+
+.carousel-add-button:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.carousel-add-button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
 .carousel-indicators .active ,.carousel-indicators button.active {
     background-color: #fff; /* Fill active indicator */
     transform: scale(1.2); /* Slightly enlarge active indicator */
@@ -59,12 +112,200 @@
     background-color: rgba(255, 255, 255, 0.7); /* Slightly brighter on hover */
 }
 
+.carousel-edit-button {
+    position: absolute;
+    left: 1.5rem;
+    bottom: 1.5rem;
+    padding: 0.8rem 1rem;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease, background 0.2s ease;
+    z-index: 2;
+}
+
+.carousel-edit-button:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.carousel-loading,
+.carousel-error {
+    position: absolute;
+    left: 50%;
+    top: 1.5rem;
+    transform: translateX(-50%);
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 0.95rem;
+    z-index: 2;
+}
 
 @media screen and (max-width: 768px) {
     .carousel-indicators {
         right: 1rem; /* Adjust position for smaller screens */
     }
     
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.modal-dialog {
+    width: min(560px, 100%);
+    max-width: 100%;
+    padding: 0.5rem;
+}
+
+.modal-content {
+    width: 100%;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+.modal-body {
+    padding: 1.75rem 1.5rem;
+    color: #111827;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.carousel-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.carousel-form-column,
+.carousel-preview-column {
+    width: 100%;
+}
+
+.carousel-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.carousel-form h3,
+.carousel-preview-column h4 {
+    margin-bottom: 1rem;
+    color: #111827;
+}
+
+.carousel-form label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #334155;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.carousel-form input,
+.carousel-form textarea,
+.carousel-form select {
+    width: 100%;
+    display: block;
+    padding: 0.95rem 1rem;
+    border-radius: 14px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 0.98rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.carousel-form input:focus,
+.carousel-form textarea:focus,
+.carousel-form select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    outline: none;
+}
+
+.carousel-form textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.carousel-submit-btn {
+    padding: 0.95rem 1.25rem;
+    border-radius: 14px;
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.carousel-submit-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.form-status {
+    font-size: 0.95rem;
+    color: #334155;
+    margin-top: 0.25rem;
+}
+
+.carousel-preview-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.carousel-preview-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #f8fafc;
+}
+
+.banner-preview-image {
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    background: #fff;
+}
+
+.banner-preview-image img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.preview-empty {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+@media screen and (max-width: 900px) {
+    .carousel-modal-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .modal-body {
+        padding: 1.25rem;
+    }
 }
 
 
