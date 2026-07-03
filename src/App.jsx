@@ -10,16 +10,24 @@ import Services  from './pages/services/services';
 import Portfolio from './pages/portfolio/portfolio.jsx';
 import Contact from './pages/contact/contact.jsx';
 import Blog from './pages/blog/blog.jsx';
+import LoginPage from './pages/login/login.jsx';
+import AdminPage from './pages/admin/admin.jsx';
+import UserPage from './pages/user/user.jsx';
 import './App.css';
-import { useState ,useEffect } from 'react';
+import { useState ,useEffect, useRef } from 'react';
 import './styles.css';
 import { BrowserRouter as BrowseRouter, Routes, Route, Link } from 'react-router-dom';
+import { subscribeToAuthChanges, logoutUser } from './Authentication/auth';
 
 
 function App() {
 //const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -43,6 +51,61 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    // 1. Check local storage for initial states
+    const localAdmin = window.localStorage.getItem('admin-auth');
+    const localUserStr = window.localStorage.getItem('user-auth');
+
+    if (localAdmin === 'true' || localAdmin === 'google' || localAdmin === 'firebase') {
+      setUser({ email: import.meta.env.VITE_ADMIN_EMAIL || 'admin' });
+    } else if (localUserStr) {
+      try {
+        const parsed = JSON.parse(localUserStr);
+        if (parsed && parsed.email) {
+          setUser({ email: parsed.email });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // 2. Subscribe to firebase auth changes
+    const unsubscribe = subscribeToAuthChanges((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        const stillAdmin = window.localStorage.getItem('admin-auth');
+        const stillUser = window.localStorage.getItem('user-auth');
+        if (!stillAdmin && !stillUser) {
+          setUser(null);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    window.localStorage.removeItem('admin-auth');
+    window.localStorage.removeItem('user-auth');
+    await logoutUser();
+    setUser(null);
+    setIsDropdownOpen(false);
+    window.location.href = '/login';
+  };
+
   
  
 
@@ -52,7 +115,7 @@ function App() {
 
   
   <BrowseRouter>
-        <nav className="navbar">
+        <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
              <div className="container">
                   <div className="navbar-logo">
                            <a href="/">My Website</a>
@@ -74,6 +137,87 @@ function App() {
                         <li><Link to="/portfolio">Portfolio</Link></li>
                         <li><Link to="/blog">Blog</Link></li>
                         <li><Link to="/contact">Contact</Link></li>
+                        {user ? (
+                          <li ref={dropdownRef} style={{ position: 'relative' }}>
+                            <button
+                              type="button"
+                              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                              className="navbar-user-btn"
+                            >
+                              <span>{user.email ? user.email.split('@')[0] : 'User'}</span>
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{
+                                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                  transition: 'transform 0.2s ease',
+                                }}
+                              >
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                              </svg>
+                            </button>
+
+                            {isDropdownOpen && (
+                              <div
+                                className="navbar-dropdown-menu"
+                                style={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  right: 0,
+                                  marginTop: '10px',
+                                  backgroundColor: '#ffffff',
+                                  minWidth: '160px',
+                                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                  borderRadius: '8px',
+                                  padding: '4px 0',
+                                  zIndex: 1000,
+                                  border: '1px solid #e2e8f0',
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={handleLogout}
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '0.6rem 1rem',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#ef4444',
+                                    cursor: 'pointer',
+                                    fontSize: '0.95rem',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'background-color 0.2s ease',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#fef2f2';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                  }}
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                  </svg>
+                                  <span>Logout</span>
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        ) : (
+                          <li><Link to="/login">Login</Link></li>
+                        )}
                     </ul>
         </div>
     </nav>        
@@ -89,6 +233,9 @@ function App() {
                <Route path="/portfolio" element={<Portfolio />}/>
                <Route path="/blog" element={<Blog />}/>
                <Route path="/contact" element={<Contact />}/>
+               <Route path="/login" element={<LoginPage />} />
+               <Route path="/admin" element={<AdminPage />} />
+               <Route path="/user" element={<UserPage />} />
         </Routes>
   </BrowseRouter>
   {/* footer */}
