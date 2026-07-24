@@ -33,7 +33,7 @@
                 $rawData = file_get_contents('php://input');
                 $jsonData = json_decode($rawData, true);
                 $data = is_array($jsonData) ? $jsonData : [];
-                $banner->editBanner($data,'id=>:id',['id'=>$resourcesId]);
+                $banner->editBanner($data, 'id = :id', ['id' => $resourcesId]);
         break;
         default:
               http_response_code(404);

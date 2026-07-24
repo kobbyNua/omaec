@@ -8,8 +8,12 @@
  * @param string|null $type Optional file type override: image|video
  * @return array Returns ['success' => bool, 'path' => string|null, 'message' => string]
  */
-function uploadMediaFile(array $file, ?string $uploadDir = null, ?string $type = null): array
+function uploadMediaFile(?array $file, ?string $uploadDir = null, ?string $type = null): array
 {
+    if (!is_array($file)) {
+        return ['success' => false, 'path' => null, 'message' => 'No file upload data provided'];
+    }
+
     if (!isset($file['name'], $file['tmp_name'], $file['error'])) {
         return ['success' => false, 'path' => null, 'message' => 'Invalid file upload data'];
     }

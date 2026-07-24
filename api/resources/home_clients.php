@@ -14,13 +14,22 @@
         break;
         case "POST":
                http_response_code(200);
-               $data=json_decode(file_get_contents('php://input'),true);
+
+               $data = json_decode(file_get_contents('php://input'), true);
+               if (!is_array($data)) {
+                   $data = $_POST;
+               }
+
+               if (!is_array($data)) {
+                   $data = [];
+               }
+
                $client->addClient($data);
         break;
         case 'PUT':
                 http_response_code(200);
                 $data=json_decode(file_get_contents('php://input'),true);
-                $client->editClient($data,'id=>:id',['id'=>$resourcesId]);
+                $client->editClient($data, 'id = :id', ['id' => $resourcesId]);
         break;
         default:
               http_response_code(404);

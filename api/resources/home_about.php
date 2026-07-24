@@ -20,7 +20,7 @@
         case 'PUT':
                 http_response_code(200);
                 $data=json_decode(file_get_contents('php://input'),true);
-                $about->editAbout($data,'id=>:id',['id'=>$resourcesId]);
+                $about->editAbout($data, 'id = :id', ['id' => $resourcesId]);
         break;
         default:
               http_response_code(404);

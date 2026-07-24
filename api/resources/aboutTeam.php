@@ -14,13 +14,25 @@
         break;
         case "POST":
                http_response_code(200);
-               $data=json_decode(file_get_contents('php://input'),true);
+               $data = json_decode(file_get_contents('php://input'), true);
+               if (!is_array($data) || $data === []) {
+                   $data = $_POST;
+               }
+               if (!is_array($data)) {
+                   $data = [];
+               }
                $about->addTeam($data);
         break;
         case 'PUT':
                 http_response_code(200);
-                $data=json_decode(file_get_contents('php://input'),true);
-                $about->editTeam($data,'id=>:id',['id'=>$resourcesId]);
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (!is_array($data) || $data === []) {
+                    $data = $_POST;
+                }
+                if (!is_array($data)) {
+                    $data = [];
+                }
+                $about->editTeam($data, 'id = :id', ['id' => $resourcesId]);
         break;
         default:
               http_response_code(404);

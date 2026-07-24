@@ -15,13 +15,25 @@
         break;
         case "POST":
                http_response_code(200);
-               $data=json_decode(file_get_contents('php://input'),true);
+               $data = json_decode(file_get_contents('php://input'), true);
+               if (!is_array($data) || $data === []) {
+                   $data = $_POST;
+               }
+               if (!is_array($data)) {
+                   $data = [];
+               }
                $media->addMedia($data);
         break;
         case 'PUT':
                 http_response_code(200);
-                $data=json_decode(file_get_contents('php://input'),true);
-                $media->editMedia($data,'id=>:id',['id'=>$resourcesId]);
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (!is_array($data) || $data === []) {
+                    $data = $_POST;
+                }
+                if (!is_array($data)) {
+                    $data = [];
+                }
+                $media->editMedia($data, 'id = :id', ['id' => $resourcesId]);
         break;
         default:
               http_response_code(404);

@@ -20,7 +20,8 @@
         case 'PUT':
                 http_response_code(200);
                 $data=json_decode(file_get_contents('php://input'),true);
-                $services->editService($data,'id=>:id',['id'=>$resourcesId]);
+                $data = is_array($data) ? $data : [];
+                $services->editService($data, 'id = :id', ['id' => $resourcesId]);
         break;
         default:
               http_response_code(404);
