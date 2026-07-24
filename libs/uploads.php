@@ -51,8 +51,14 @@ function uploadMediaFile(?array $file, ?string $uploadDir = null, ?string $type 
     $baseDir = dirname(__DIR__) . '/uploads';
     $targetDir = $baseDir;
 
+    if (!empty($uploadDir)) {
+        $targetDir = rtrim($targetDir, '/') . '/' . trim($uploadDir, '/');
+    }
+
     if (!is_dir($targetDir)) {
-        return ['success' => false, 'path' => null, 'message' => 'Upload directory not found'];
+        if (!mkdir($targetDir, 0777, true) && !is_dir($targetDir)) {
+            return ['success' => false, 'path' => null, 'message' => 'Upload directory could not be created'];
+        }
     }
 
     $fileName = uniqid('media_', true) . '.' . $extension;
