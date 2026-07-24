@@ -30,6 +30,33 @@ const isLoggedIn = () => {
     return Boolean(userAuth) || isAdminLoggedIn();
 };
 
+const BACKEND_API_URL = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        console.warn('VITE_APP_URL is not defined. Active carousel backend calls may fail.');
+        return '';
+    }
+
+    const cleaned = rawUrl.replace(/\/+$/, '');
+    const malformedMatch = cleaned.match(/^(https?:\/\/[^/:]+):(\d+):\d+(\/.*)?$/);
+    if (malformedMatch) {
+        const host = malformedMatch[1];
+        const port = malformedMatch[2];
+        const path = malformedMatch[3] || '';
+        return `${host}:${port}${path}`;
+    }
+
+    return cleaned;
+})();
+
+const BACKEND_API_ORIGIN = (() => {
+    try {
+        return new URL(BACKEND_API_URL).origin;
+    } catch {
+        return window.location.origin;
+    }
+})();
+
 const getAuthorizationToken = async () => {
     const currentUser = auth.currentUser;
     if (currentUser) {
@@ -105,7 +132,7 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
             headers.Authorization = authToken;
         }
 
-        const response = await fetch('http://127.0.0.1/media/api/home', {
+        const response = await fetch(`${BACKEND_API_URL}/home`, {
             method: 'POST',
             headers,
             body: formData,
@@ -256,7 +283,7 @@ function Editcarouselmodal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger = 
             headers.Authorization = authToken;
         }
 
-        const response = await fetch('http://127.0.0.1:8000/media/api/home', {
+        const response = await fetch(`${BACKEND_API_URL}/home`, {
             method: 'PUT',
             headers,
             body: JSON.stringify({ title, subtitle }),
@@ -346,51 +373,85 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
 
      useEffect(() => {
          const controller = new AbortController();
+        let isMounted = true;
 
-         const loadSlides = async () => {
+        const loadSlides = async () => {
              try {
-                 const authToken = await getAuthorizationToken();
-                 const headers = { 'Content-Type': 'application/json' };
-                 if (authToken) {
-                     headers.Authorization = authToken;
-                 }
+                const authToken = await getAuthorizationToken();
+                const headers = {};
+                if (authToken) {
+                    headers.Authorization = authToken;
+                }
 
-                 const response = await fetch('http://127.0.0.1/media/api/home', {
-                     signal: controller.signal,
-                     headers,
-                 });
+               const response = await fetch(`${BACKEND_API_URL}/home`, {
+                   method: 'GET',
+                   signal: controller.signal,
+                   headers,
+               });
                  if (!response.ok) {
                      throw new Error('Failed to load carousel data');
                  }
 
-                 const data = await response.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    const parsedSlides = data.map((item, index) => ({
-                        src: item.image_url || item.image || item.src || item.url || item.picture || '',
-                        title: item.title || '',
-                        subtitle: item.subtitle || '',
-                        alt: item.title || item.subtitle || `Carousel slide ${index + 1}`,
-                    })).filter((slide) => Boolean(slide.src));
+                const json = await response.json();
 
-                    setSlides(parsedSlides);
-                    const has = parsedSlides.length > 0;
-                    setHasData(has);
-                    if (typeof onDataStateChange === 'function') onDataStateChange(has);
+                // backend returns { status: true, data: [...] }
+                const items = Array.isArray(json) ? json : (json?.data || []);
+
+                if (items.length > 0) {
+                    const parsedSlides = items
+                        .filter((it) => Number(it.is_active) === 1 || it.is_active === true)
+                        .map((item, index) => {
+                            let src = item.image_url || item.image || item.src || item.url || item.picture || '';
+                            if (src && !src.startsWith('http')) {
+                                if (src.includes('/var/www/html')) {
+                                    src = `${BACKEND_API_ORIGIN}${src.replace('/var/www/html', '')}`;
+                                } else if (src.startsWith('/')) {
+                                    src = `${BACKEND_API_ORIGIN}${src}`;
+                                }
+                            }
+
+                            return {
+                                src,
+                                title: item.title || item.tagline || '',
+                                subtitle: item.subTitle || item.subtitle || '',
+                                alt: item.title || item.subTitle || item.subtitle || `Carousel slide ${index + 1}`,
+                            };
+                        })
+                        .filter((s) => Boolean(s.src));
+
+                    if (isMounted) {
+                        setSlides(parsedSlides);
+                        const has = parsedSlides.length > 0;
+                        setHasData(has);
+                        if (typeof onDataStateChange === 'function') onDataStateChange(has);
+                    }
                 } else {
+                    if (isMounted) {
+                        setHasData(false);
+                        if (typeof onDataStateChange === 'function') onDataStateChange(false);
+                    }
+                }
+            } catch (error_) {
+                // Ignore abort errors (triggered by controller.abort() on unmount)
+                if (error_ && error_.name === 'AbortError') {
+                    return;
+                }
+
+                if (isMounted) {
+                    setError(error_.message || 'Unable to load slides');
                     setHasData(false);
                     if (typeof onDataStateChange === 'function') onDataStateChange(false);
                 }
-            } catch (error_) {
-                setError(error_.message || 'Unable to load slides');
-                setHasData(false);
-                if (typeof onDataStateChange === 'function') onDataStateChange(false);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
          };
 
          loadSlides();
-         return () => controller.abort();
+         return () => {
+             isMounted = false;
+             controller.abort();
+         };
      }, []);
 
      useEffect(() => {
@@ -413,7 +474,7 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
         if (isLoggedIn()) {
             onCreateClick?.();
         } else {
-            window.alert('Please sign in to create a carousel banner.');
+            console.warn('Create carousel banner requires sign-in.');
         }
     };
 
@@ -421,7 +482,7 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
         if (isLoggedIn()) {
             onEditClick?.();
         } else {
-            window.alert('Only admins may edit carousel banners.');
+            console.warn('Edit carousel banner requires sign-in.');
         }
     };
 
@@ -532,15 +593,12 @@ function Carousels(){
                      onClose={() => setIsEditOpen(false)}
                      hideTrigger
                  />
-                 {activeHasData ? (
-                     <ActiveCarousel
-                         onCreateClick={() => setIsCreateOpen(true)}
-                         onEditClick={() => setIsEditOpen(true)}
-                         onDataStateChange={(v) => setActiveHasData(v)}
-                     />
-                 ) : (
-                     <DefaultCarousel onCreateClick={() => setIsCreateOpen(true)} />
-                 )}
+                 <ActiveCarousel
+                     onCreateClick={() => setIsCreateOpen(true)}
+                     onEditClick={() => setIsEditOpen(true)}
+                     onDataStateChange={(v) => setActiveHasData(v)}
+                 />
+                 {!activeHasData && <DefaultCarousel onCreateClick={() => setIsCreateOpen(true)} />}
               </>
 
        );

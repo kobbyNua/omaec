@@ -6,7 +6,6 @@ function Modal({ isOpen, onClose, children }) {
     useEffect(() => {
         if (!isOpen) return;
 
-        // Only handle Escape key for closing the modal.
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
                 event.stopPropagation();

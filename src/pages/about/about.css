@@ -1,6 +1,32 @@
+
+.about-page-content {
+    padding: 5rem 0;
+    background-color: #fff;
+}
+
+.about-page-content .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
 .about-story, .about-mission {
     margin-bottom: 4rem;
     text-align: center;
+}
+
+.about-story h3, .about-mission h3, .our-team h3 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.about-story p, .about-mission p {
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .about-story h3, .about-mission h3, .our-team h3 {
@@ -60,9 +86,170 @@
     font-size: 1rem;
 }
 
-@media  screen and (max-width: 768px) {
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    padding: 1rem;
+}
+
+.modal-dialog {
+    width: 100%;
+    max-width: 600px;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #333;
+}
+
+.close-button {
+    border: none;
+    background: transparent;
+    font-size: 1.4rem;
+    color: #666;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.95rem;
+    color: #333;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.12);
+}
+
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-error {
+    margin-top: 0.35rem;
+    color: #dc3545;
+    font-size: 0.9rem;
+}
+
+.form-status {
+    margin-top: 0.75rem;
+    color: #0d6efd;
+    font-size: 0.95rem;
+}
+
+.about-section-heading {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.about-section-heading h3 {
+    margin: 0;
+}
+
+.about-section-add-button,
+.about-section-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.16);
+    transition: transform 0.2s ease, filter 0.12s ease;
+}
+
+.about-section-add-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(180deg, #34d399, #10b981);
+    color: #042f1f;
+}
+
+.about-section-edit-button {
+    background: linear-gradient(180deg, #60a5fa, #2563eb);
+    margin-top: 0.75rem;
+}
+
+.about-section-add-button:hover,
+.about-section-edit-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.95);
+}
+
+.team-member .about-section-edit-button {
+    position: static;
+    margin-top: 1rem;
+}
+
+button[type="submit"] {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    background: #0d6efd;
+    color: #fff;
+    padding: 0.8rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button[type="submit"]:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+@media screen and (max-width: 768px) {
     .team-grid {
         grid-template-columns: 1fr;
     }
-    
 }

@@ -231,6 +231,7 @@ function App() {
                <Route path="/services" element={<Services />}/>
                <Route path="/media" element={<Media />}/>
                <Route path="/events" element={<Events />}/>
+               <Route path="/events/:slug" element={<Events />}/>
                <Route path="/portfolio" element={<Portfolio />}/>
                <Route path="/blog" element={<Blog />}/>
                <Route path="/contact" element={<Contact />}/>

@@ -1,12 +1,12 @@
 
 
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 function Modal({ isOpen, onClose, children }) {
     useEffect(() => {
         if (!isOpen) return;
 
-        // Only handle Escape key for closing the modal.
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
                 event.stopPropagation();
@@ -30,7 +30,7 @@ function Modal({ isOpen, onClose, children }) {
         }
     };
 
-    return (
+    return createPortal(
         <div className="modal" role="dialog" aria-modal="true" onClick={handleOverlayClick}>
             <div className="modal-dialog">
                 <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -39,7 +39,8 @@ function Modal({ isOpen, onClose, children }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

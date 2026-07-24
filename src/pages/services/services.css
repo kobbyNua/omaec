@@ -156,6 +156,80 @@
     display: block;
 }
 
+.service-card-slug {
+    margin: 0 0 0.75rem;
+    color: #1b6dc1;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+}
+
+.service-card-edit-button {
+    margin-top: 1.25rem;
+    border: none;
+    background: #1b6dc1;
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+}
+
+.service-card-edit-button:hover {
+    background: #14559b;
+}
+
+.service-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.service-add-button {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    margin: 0;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 2000;
+}
+
+.modal-dialog {
+    width: min(100%, 560px);
+    max-width: 560px;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.close-button {
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
 @media  screen and (max-width: 768px) {
     .advertisement-service,
     .media-service,
