@@ -15,7 +15,7 @@ jobs:
     - name: Sync PHP Code to Subfolder
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
-        server: ${{ secrets.FTP_SERVER_NAME }}
+        server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.BACKEND_FTP_USER }}
         password: ${{ secrets.BACKEND_FTP_PASS }}
         server-dir: /api/               # Deploys into public_html/api/
