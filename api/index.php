@@ -30,7 +30,7 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
     //base path API url
 
-    $baseprefix ="/media/api";
+    $baseprefix ="/api/api";
 
     //strip the prefix from the beginning of the URI
     if(strpos($requestUri,$baseprefix)===0){

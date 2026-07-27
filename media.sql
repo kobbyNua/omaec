@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 19, 2026 at 11:35 AM
--- Server version: 8.0.43-0ubuntu0.22.04.2
--- PHP Version: 8.4.12
+-- Generation Time: Jul 27, 2026 at 04:33 PM
+-- Server version: 8.0.46-0ubuntu0.22.04.3
+-- PHP Version: 8.4.22
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -37,6 +37,29 @@ CREATE TABLE `about_page_sections` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `about_page_sections`
+--
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `authors`
+--
+
+CREATE TABLE `authors` (
+  `id` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `avatar_url` varchar(200) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `authors`
+--
+
+
 -- --------------------------------------------------------
 
 --
@@ -47,6 +70,23 @@ CREATE TABLE `books` (
   `id` int NOT NULL,
   `names` varchar(250) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `categories`
+--
+
+CREATE TABLE `categories` (
+  `id` int NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `categories`
+--
+
 
 -- --------------------------------------------------------
 
@@ -65,7 +105,9 @@ CREATE TABLE `events` (
   `registration_url` varchar(255) DEFAULT NULL,
   `is_active` tinyint DEFAULT '1',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `live_stream_status` enum('upcoming','live','ended') DEFAULT 'upcoming',
+  `live_stream_url` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -81,6 +123,11 @@ CREATE TABLE `home_about_identity` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `home_about_identity`
+--
+
+
 -- --------------------------------------------------------
 
 --
@@ -89,10 +136,17 @@ CREATE TABLE `home_about_identity` (
 
 CREATE TABLE `home_achievement` (
   `id` int NOT NULL,
-  `figures` int DEFAULT '0',
+  `figures` varchar(100) NOT NULL,
+  `icon_value` enum('font-awesome','svg','image') DEFAULT 'font-awesome',
+  `icon_type` varchar(255) DEFAULT 'fa-laptop',
   `archivement_name` varchar(255) NOT NULL,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `home_achievement`
+--
+
 
 -- --------------------------------------------------------
 
@@ -115,6 +169,11 @@ CREATE TABLE `home_banners` (
   `UPDATE_AT` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `home_banners`
+--
+
+
 -- --------------------------------------------------------
 
 --
@@ -128,6 +187,11 @@ CREATE TABLE `home_CLIENTS` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `home_CLIENTS`
+--
+
 
 -- --------------------------------------------------------
 
@@ -146,6 +210,11 @@ CREATE TABLE `Home_services` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `update_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `Home_services`
+--
+
 
 -- --------------------------------------------------------
 
@@ -179,6 +248,27 @@ CREATE TABLE `media_lists` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `media_lists`
+--
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `password_reset_tokens`
+--
+
+CREATE TABLE `password_reset_tokens` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `expires_at` timestamp NOT NULL,
+  `used` tinyint DEFAULT '0',
+  `used_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- --------------------------------------------------------
 
 --
@@ -201,6 +291,36 @@ CREATE TABLE `portfolio` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `portfolio`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `post`
+--
+
+CREATE TABLE `post` (
+  `id` int NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `excerpt` text,
+  `content` text NOT NULL,
+  `image_url` varchar(255) NOT NULL,
+  `is_featured` tinyint(1) DEFAULT '0',
+  `published_at` date DEFAULT NULL,
+  `author_id` int DEFAULT NULL,
+  `category_id` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `post`
+--
+
+
 -- --------------------------------------------------------
 
 --
@@ -218,6 +338,11 @@ CREATE TABLE `service_list` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `service_list`
+--
+
 
 -- --------------------------------------------------------
 
@@ -240,6 +365,34 @@ CREATE TABLE `team_members` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
+-- Dumping data for table `team_members`
+--
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` int NOT NULL,
+  `firebase_uid` varchar(128) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `role` varchar(50) NOT NULL DEFAULT 'user',
+  `status` varchar(50) NOT NULL DEFAULT 'active',
+  `password` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+
+--
 -- Indexes for dumped tables
 --
 
@@ -251,10 +404,23 @@ ALTER TABLE `about_page_sections`
   ADD UNIQUE KEY `section_key` (`section_key`);
 
 --
+-- Indexes for table `authors`
+--
+ALTER TABLE `authors`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `books`
 --
 ALTER TABLE `books`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `categories`
+--
+ALTER TABLE `categories`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `slug` (`slug`);
 
 --
 -- Indexes for table `events`
@@ -310,12 +476,31 @@ ALTER TABLE `media_lists`
   ADD KEY `idx_team_active_oder` (`is_active`,`display_order`);
 
 --
+-- Indexes for table `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `token` (`token`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_token` (`token`),
+  ADD KEY `idx_expires` (`expires_at`);
+
+--
 -- Indexes for table `portfolio`
 --
 ALTER TABLE `portfolio`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `slug` (`slug`),
   ADD KEY `idx_PORTFOLIO_SORT` (`is_active`,`display_order`);
+
+--
+-- Indexes for table `post`
+--
+ALTER TABLE `post`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `slug` (`slug`),
+  ADD KEY `author_id` (`author_id`),
+  ADD KEY `category_id` (`category_id`);
 
 --
 -- Indexes for table `service_list`
@@ -333,6 +518,13 @@ ALTER TABLE `team_members`
   ADD KEY `idx_team_active_oder` (`is_active`,`display_order`);
 
 --
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `firebase_uid` (`firebase_uid`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -340,13 +532,25 @@ ALTER TABLE `team_members`
 -- AUTO_INCREMENT for table `about_page_sections`
 --
 ALTER TABLE `about_page_sections`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `authors`
+--
+ALTER TABLE `authors`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `books`
 --
 ALTER TABLE `books`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `categories`
+--
+ALTER TABLE `categories`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `events`
@@ -358,31 +562,31 @@ ALTER TABLE `events`
 -- AUTO_INCREMENT for table `home_about_identity`
 --
 ALTER TABLE `home_about_identity`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `home_achievement`
 --
 ALTER TABLE `home_achievement`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `home_banners`
 --
 ALTER TABLE `home_banners`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `home_CLIENTS`
 --
 ALTER TABLE `home_CLIENTS`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `Home_services`
 --
 ALTER TABLE `Home_services`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `home_services_header`
@@ -394,25 +598,60 @@ ALTER TABLE `home_services_header`
 -- AUTO_INCREMENT for table `media_lists`
 --
 ALTER TABLE `media_lists`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `portfolio`
 --
 ALTER TABLE `portfolio`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `post`
+--
+ALTER TABLE `post`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `service_list`
 --
 ALTER TABLE `service_list`
-  MODIFY `ID` int NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `team_members`
 --
 ALTER TABLE `team_members`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `password_reset_tokens`
+--
+ALTER TABLE `password_reset_tokens`
+  ADD CONSTRAINT `password_reset_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `post`
+--
+ALTER TABLE `post`
+  ADD CONSTRAINT `post_ibfk_1` FOREIGN KEY (`author_id`) REFERENCES `authors` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `post_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
