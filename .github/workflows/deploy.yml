@@ -1,0 +1,26 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Sync PHP Code to Subfolder
+      uses: SamKirsch/ftp-deploy-action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER_NAME }}
+        username: ${{ secrets.BACKEND_FTP_USER }}
+        password: ${{ secrets.BACKEND_FTP_PASS }}
+        server-dir: /api/               # Deploys into public_html/api/
+        exclude: |
+          **/.git**
+          **/.github**
+          **/node_modules/**
+          .env
