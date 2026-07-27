@@ -21,6 +21,7 @@ import { BrowserRouter as BrowseRouter, Routes, Route, Link } from 'react-router
 import { subscribeToAuthChanges, logoutUser } from './Authentication/auth';
 
 
+
 function App() {
 //const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -119,7 +120,7 @@ function App() {
         <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
              <div className="container">
                   <div className="navbar-logo">
-                           <a href="/">My Website</a>
+                           <a href="/"><img src="./assets/while_logo.png" alt="My Website" /></a>
                   </div>
 
                   {/* Hamburger Menu Icon for Mobile */}

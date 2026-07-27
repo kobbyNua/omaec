@@ -211,9 +211,7 @@ function ActiveAchievement({ onCreateClick, onEditClick, onDataStateChange, onLo
             className="success-story-number-item"
             key={achievement.id || achievement.archivement_name || achievement.achievement_name}
           >
-            <div className="service-icon">
-              <i className={achievement.icon_type || achievement.icon_value || 'fas fa-award'} aria-hidden="true" />
-            </div>
+            <i className={achievement.icon_type || achievement.icon_value || 'fas fa-award'} aria-hidden="true" />
             <h3>{achievement.figures || '0'}</h3>
             <p>{achievement.archivement_name || achievement.achievement_name || 'Achievement'}</p>
             {isLoggedIn() && (

@@ -1,5 +1,112 @@
 
-*{margin:0px;padding:0px}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --font-sans: 'Roboto', sans-serif;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    --bg: #ffffff;
+    --bg-soft: #f8fafc;
+    --link: #0066cc;
+    --link-hover: #003d80;
+}
+
+html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.75;
+    color: var(--text-primary);
+    background-color: var(--bg);
+    min-height: 100vh;
+}
+
+body, button, input, textarea, select {
+    font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: inherit;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 1rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+h1 {
+    font-size: clamp(2.75rem, 5vw, 4.75rem);
+}
+
+h2 {
+    font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+h3 {
+    font-size: clamp(1.625rem, 3.5vw, 2.25rem);
+}
+
+h4 {
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+h5 {
+    font-size: clamp(1.1rem, 2.3vw, 1.35rem);
+    font-weight: 600;
+}
+
+h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+p, span, li, a {
+    font-family: inherit;
+    font-size: clamp(1rem, 1vw, 1.05rem);
+    line-height: 1.8;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+p {
+    margin: 0 0 1.5rem;
+}
+
+li {
+    margin-bottom: 0.9rem;
+}
+
+ul, ol {
+    margin: 0 0 1.5rem;
+    padding-left: 1.5rem;
+}
+
+a {
+    color: var(--link);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover,
+a:focus-visible {
+    color: var(--link-hover);
+}
+
+small {
+    font-size: 0.875rem;
+}
+
 /* Footer Section */
 .footer {
     background-color: #1a1a1a;

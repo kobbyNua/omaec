@@ -1,5 +1,6 @@
 import Carousels from "./carousel";
 import "./home.css";
+//import "./main.css";
 import Service from "./service";
 import About from "./about";
 import Achievement from "./achievement";

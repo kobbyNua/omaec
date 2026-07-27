@@ -453,7 +453,7 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
             <div key={client.id} className="client-logo-item">
               <img src={client.photo_url} alt={client.alt} />
               {isLoggedIn() && (
-                <button type="button" className="service-edit-btn" onClick={() => onEditClick(client)}>
+                <button type="button" className="service-edit-btn client-logo-edit-btn" onClick={() => onEditClick(client)}>
                   Edit
                 </button>
               )}

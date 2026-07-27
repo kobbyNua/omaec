@@ -452,6 +452,12 @@ function ActiveService({ onCreateClick, onEditClick, onDataStateChange }) {
           <h2>Our Services</h2>
         </div>
         <h5>We offer a wide range of services to help you succeed.</h5>
+        <span>
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut dolorum iusto
+          perferendis placeat ad facilis suscipit exercitationem aut vero omnis
+          repellendus iure culpa, unde laudantium assumenda recusandae, beatae, porro
+          incidunt.
+        </span>
         {error && <p className="service-error">{error}</p>}
         {services.map((service) => (
           <div className="service-item" key={service.id}>

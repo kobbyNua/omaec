@@ -25,10 +25,26 @@
 }
 
 .navbar-logo a {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111;
   text-decoration: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.navbar-logo a:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.navbar-logo a img {
+  height: 42px;
+  width: auto;
+  display: block;
+  max-width: 180px;
 }
 
 .navbar-links {
