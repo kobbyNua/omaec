@@ -25,8 +25,8 @@ jobs:
     - name: Sync React Build to Root
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
-        server: ${{ secrets.FTP_SERVER_NAME }}
-        username: ${{ secrets.FRONTEND_FTP_USER }}
-        password: ${{ secrets.FRONTEND_FTP_PASS }}
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FRONTEND_SERVER_USER }}
+        password: ${{ secrets.FRONTEND_SERVER_PASS }}
         local-dir: ./build/
         server-dir: /                   # Deploys directly into public_html/
