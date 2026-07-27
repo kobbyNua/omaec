@@ -1,0 +1,32 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build React App
+      run: |
+        npm ci
+        npm run build
+
+    - name: Sync React Build to Root
+      uses: SamKirsch/ftp-deploy-action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER_NAME }}
+        username: ${{ secrets.FRONTEND_FTP_USER }}
+        password: ${{ secrets.FRONTEND_FTP_PASS }}
+        local-dir: ./build/
+        server-dir: /                   # Deploys directly into public_html/
