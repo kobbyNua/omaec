@@ -5,22 +5,29 @@ import './services.css';
 import Modal from './servicesModal';
 import { auth } from '../../Authentication/auth.jsx';
 
-const SERVICE_API_URL = (() => {
+const SERVICE_API_BASE_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /services');
-        return '/services';
+        return '';
     }
-    const base = rawUrl.replace(/\/+$/g, '');
-    return `${base}/services`;
+
+    try {
+        const parsedUrl = new URL(rawUrl, window.location.origin);
+        return `${parsedUrl.origin}${parsedUrl.pathname.replace(/\/+$/g, '')}`;
+    } catch {
+        return rawUrl.replace(/\/+$/g, '');
+    }
 })();
 
-const SERVICE_API_ORIGIN = (() => {
-    try {
-        return new URL(SERVICE_API_URL).origin;
-    } catch {
-        return window.location.origin;
+const SERVICE_API_URL = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        return '/services';
     }
+
+    const base = rawUrl.replace(/\/+$/g, '');
+    return `${base}/services`;
 })();
 
 const isAdminLoggedIn = () => {
@@ -75,11 +82,17 @@ const resolveServiceImageUrl = (value) => {
     }
 
     if (src.includes('/var/www/html')) {
-        return `${SERVICE_API_ORIGIN}${src.replace('/var/www/html', '')}`;
+        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
+        return SERVICE_API_BASE_URL
+            ? `${SERVICE_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/')
+            : src;
     }
 
     if (src.startsWith('/')) {
-        return `${SERVICE_API_ORIGIN}${src}`;
+        const relativePath = src.replace(/^\/+/, '');
+        return SERVICE_API_BASE_URL
+            ? `${SERVICE_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/')
+            : src;
     }
 
     return src;

@@ -5,6 +5,21 @@ import { createPortal } from 'react-dom';
 import Modal from './mediaModal';
 import { auth } from '../../Authentication/auth.jsx';
 
+const MEDIA_API_BASE_URL = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        console.warn('VITE_APP_URL is not defined. Falling back to /media');
+        return '';
+    }
+
+    try {
+        const parsedUrl = new URL(rawUrl, window.location.origin);
+        return `${parsedUrl.origin}${parsedUrl.pathname.replace(/\/+$/g, '')}`;
+    } catch {
+        return rawUrl.replace(/\/+$/g, '');
+    }
+})();
+
 const MEDIA_API_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
     if (!rawUrl) {
@@ -13,14 +28,6 @@ const MEDIA_API_URL = (() => {
     }
     const base = rawUrl.replace(/\/+$/g, '');
     return `${base}/media`;
-})();
-
-const MEDIA_API_ORIGIN = (() => {
-    try {
-        return new URL(MEDIA_API_URL).origin;
-    } catch {
-        return window.location.origin;
-    }
 })();
 
 const isAdminLoggedIn = () => {
@@ -75,11 +82,13 @@ const resolveMediaUrl = (value) => {
     }
 
     if (src.includes('/var/www/html')) {
-        return `${MEDIA_API_ORIGIN}${src.replace('/var/www/html', '')}`;
+        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
+        return MEDIA_API_BASE_URL ? `${MEDIA_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
     }
 
     if (src.startsWith('/')) {
-        return `${MEDIA_API_ORIGIN}${src}`;
+        const relativePath = src.replace(/^\/+/, '');
+        return MEDIA_API_BASE_URL ? `${MEDIA_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
     }
 
     return src;

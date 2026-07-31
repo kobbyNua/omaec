@@ -4,6 +4,21 @@ import './blog.css';
 import Modal from './blogModal';
 import { auth } from '../../Authentication/auth.jsx';
 
+const BLOG_API_BASE_URL = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        console.warn('VITE_APP_URL is not defined. Falling back to /blog');
+        return '';
+    }
+
+    try {
+        const parsedUrl = new URL(rawUrl, window.location.origin);
+        return `${parsedUrl.origin}${parsedUrl.pathname.replace(/\/+$/g, '')}`;
+    } catch {
+        return rawUrl.replace(/\/+$/g, '');
+    }
+})();
+
 const BLOG_API_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
     if (!rawUrl) {
@@ -22,14 +37,6 @@ const CATEGORY_API_URL = (() => {
     }
     const base = rawUrl.replace(/\/+$/g, '');
     return `${base}/categories`;
-})();
-
-const BLOG_API_ORIGIN = (() => {
-    try {
-        return new URL(BLOG_API_URL).origin;
-    } catch {
-        return window.location.origin;
-    }
 })();
 
 const isAdminLoggedIn = () => {
@@ -101,13 +108,15 @@ const resolveBlogImageUrl = (value) => {
 
     src = src.replace(/\\/g, '/');
     if (src.includes('/var/www/html')) {
-        return `${BLOG_API_ORIGIN}${src.replace('/var/www/html', '')}`;
+        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
+        return BLOG_API_BASE_URL ? `${BLOG_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
     }
     if (src.startsWith('/')) {
-        return `${BLOG_API_ORIGIN}${src}`;
+        const relativePath = src.replace(/^\/+/, '');
+        return BLOG_API_BASE_URL ? `${BLOG_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
     }
     if (src.startsWith('uploads/posts/') || src.startsWith('storage/') || src.startsWith('public/')) {
-        return `${BLOG_API_ORIGIN}/${src}`;
+        return BLOG_API_BASE_URL ? `${BLOG_API_BASE_URL}/${src}`.replace(/\/{2,}/g, '/') : src;
     }
 
     return src;

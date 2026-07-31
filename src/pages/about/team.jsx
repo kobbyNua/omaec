@@ -3,6 +3,21 @@ import { createPortal } from 'react-dom';
 import Modal from './aboutModal';
 import { auth } from '../../Authentication/auth.jsx';
 
+const TEAM_API_BASE_URL = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        console.warn('VITE_APP_URL is not defined. Falling back to /aboutTeam');
+        return '';
+    }
+
+    try {
+        const parsedUrl = new URL(rawUrl, window.location.origin);
+        return `${parsedUrl.origin}${parsedUrl.pathname.replace(/\/+$/g, '')}`;
+    } catch {
+        return rawUrl.replace(/\/+$/g, '');
+    }
+})();
+
 const TEAM_API_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
     if (!rawUrl) {
@@ -54,14 +69,6 @@ const getAuthorizationToken = async () => {
     return '';
 };
 
-const TEAM_API_ORIGIN = (() => {
-    try {
-        return new URL(TEAM_API_URL).origin;
-    } catch {
-        return window.location.origin;
-    }
-})();
-
 const resolveTeamImageUrl = (value) => {
     let src = value || '';
     if (!src) {
@@ -73,11 +80,13 @@ const resolveTeamImageUrl = (value) => {
     }
 
     if (src.includes('/var/www/html')) {
-        return `${TEAM_API_ORIGIN}${src.replace('/var/www/html', '')}`;
+        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
+        return TEAM_API_BASE_URL ? `${TEAM_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
     }
 
     if (src.startsWith('/')) {
-        return `${TEAM_API_ORIGIN}${src}`;
+        const relativePath = src.replace(/^\/+/, '');
+        return TEAM_API_BASE_URL ? `${TEAM_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
     }
 
     return src;

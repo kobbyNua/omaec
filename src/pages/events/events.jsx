@@ -5,6 +5,21 @@ import Banner from "../banner/banner";
 import Modal from "./eventModal";
 import { auth } from "../../Authentication/auth.jsx";
 
+const EVENT_API_BASE_URL = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+    if (!rawUrl) {
+        console.warn("VITE_APP_URL is not defined. Falling back to /events");
+        return "";
+    }
+
+    try {
+        const parsedUrl = new URL(rawUrl, window.location.origin);
+        return `${parsedUrl.origin}${parsedUrl.pathname.replace(/\/+$/g, "")}`;
+    } catch {
+        return rawUrl.replace(/\/+$/g, "");
+    }
+})();
+
 const EVENT_API_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
     if (!rawUrl) {
@@ -13,14 +28,6 @@ const EVENT_API_URL = (() => {
     }
     const base = rawUrl.replace(/\/+$/g, "");
     return `${base}/events`;
-})();
-
-const EVENT_API_ORIGIN = (() => {
-    try {
-        return new URL(EVENT_API_URL).origin;
-    } catch {
-        return window.location.origin;
-    }
 })();
 
 const isAdminLoggedIn = () => {
@@ -85,11 +92,13 @@ const resolveEventImageUrl = (value) => {
     }
 
     if (src.includes("/var/www/html")) {
-        return `${EVENT_API_ORIGIN}${src.replace("/var/www/html", "")}`;
+        const relativePath = src.replace("/var/www/html", "").replace(/^\/+/, "");
+        return EVENT_API_BASE_URL ? `${EVENT_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, "/") : src;
     }
 
     if (src.startsWith("/")) {
-        return `${EVENT_API_ORIGIN}${src}`;
+        const relativePath = src.replace(/^\/+/, "");
+        return EVENT_API_BASE_URL ? `${EVENT_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, "/") : src;
     }
 
     return src;
