@@ -18,8 +18,8 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.BACKEND_FTP_USER }}
         password: ${{ secrets.BACKEND_FTP_PASS }}
-        server-dir: public_html/media/               # Deploys into public_html/api/
-        local-dir: ./
+        server-dir: public_html/media/               # Deploys into public_html/media/
+        local-dir: ./media/
         exclude: |
           **/.git**
           **/.github**
