@@ -48,6 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // -----------------------------------------------------------------------------
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+
+
+
+
+
 $baseprefixes = ['/api', '/media/api'];
 
 foreach ($baseprefixes as $baseprefix) {
@@ -67,6 +72,20 @@ $resourcesId = $uriSegment[1] ?? null;
 // AUTHENTICATION & GUEST ACCESS CONTROL
 // -----------------------------------------------------------------------------
 $resourceFile = __DIR__ . '/resources/' . $resource . '.php';
+// --- TEMPORARY DEBUGGER (Remove after testing) ---
+header("Content-Type: application/json");
+echo json_encode([
+    'status' => 'PHP Router Executing',
+    'raw_request_uri' => $_SERVER['REQUEST_URI'],
+    'parsed_request_uri' => $requestUri,
+    'extracted_resource' => $resource,
+    'target_file_path' => $resourceFile,
+    'file_exists_on_linux' => file_exists($resourceFile)
+], JSON_PRETTY_PRINT);
+exit;
+// --------------------------------------------------
+
+
 $auth = require_once __DIR__ . '/resources/verify.php';
 
 $GLOBALS['auth'] = is_array($auth) ? $auth : [
