@@ -1,0 +1,18 @@
+DirectoryIndex index.php
+
+RewriteEngine On
+
+# 1. Pass Authorization Header
+<IfModule mod_rewrite.c>
+    CGIPassAuth On
+</IfModule>
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+# 2. Prevent directory listings
+Options -Indexes
+
+# 3. Route all non-file requests to the api/index.php router
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ api/index.php [QSA,L]
