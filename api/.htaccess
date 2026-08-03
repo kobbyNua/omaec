@@ -4,15 +4,20 @@
 #RewriteRule ^(.*)$ index.php [QSA,L] 
 
 
+
 RewriteEngine On
 
-# 1. Force Apache to pass the Authorization header to PHP
+# 1. Force Authorization header passing across PHP-FPM, LiteSpeed, and CGI
+<IfModule mod_rewrite.c>
+    CGIPassAuth On
+</IfModule>
 SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
 
-# 2. Prevent directory listings
+# 2. Prevent directory browsing
 Options -Indexes
 
-# 3. Route all non-file/non-folder requests through index.php cleanly
+# 3. Route non-file requests to index.php cleanly
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
