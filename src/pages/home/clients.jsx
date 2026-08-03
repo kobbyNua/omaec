@@ -12,6 +12,7 @@ const CLIENT_API_URL = (() => {
   }
 
   const base = rawUrl.replace(/\/+$/g, "");
+  console.log(`Using CLIENT_API_URL: ${base}/home_clients`);
   return `${base}/home_clients`;
 })();
 
