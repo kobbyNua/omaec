@@ -1,4 +1,18 @@
+#RewriteEngine On
+#RewriteCond %{REQUEST_FILENAME} !-f
+#RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteRule ^(.*)$ index.php [QSA,L] 
+
+
 RewriteEngine On
+
+# 1. Force Apache to pass the Authorization header to PHP
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+# 2. Prevent directory listings
+Options -Indexes
+
+# 3. Route all non-file/non-folder requests through index.php cleanly
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L] 
+RewriteRule ^ index.php [QSA,L]
