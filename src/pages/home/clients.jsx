@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
+import { extractResponseCollection } from "../../utils/apiResponse.js";
 
 const CLIENT_API_URL = (() => {
   const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
@@ -410,14 +411,14 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
         }
 
         const json = await response.json();
-        const items = Array.isArray(json) ? json : json?.data || [];
+        const items = extractResponseCollection(json, ["clients", "home_clients"]);
 
         const validClients = items
-          .filter((item) => item && (item.image_url || item.photo_url || item.photo || item.alt))
+          .filter((item) => item && (item.image_url || item.photo_url || item.photo || item.alt || item.title || item.subTitle || item.subtitle))
           .map((item) => ({
             id: item.id,
             photo_url: resolveClientImageUrl(item.image_url || item.photo_url || item.photo || ""),
-            alt: item.alt || "Client",
+            alt: item.alt || item.title || item.subTitle || item.subtitle || "Client",
           }));
 
         setClients(validClients);

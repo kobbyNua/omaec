@@ -3,8 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import "./events.css";
 import Banner from "../banner/banner";
 import Modal from "./eventModal";
-import { auth } from "../../Authentication/auth.jsx";
-
+import { auth } from "../../Authentication/auth.jsx";import { extractResponseCollection } from '../../utils/apiResponse.js';
 const EVENT_API_BASE_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
     if (!rawUrl) {
@@ -731,7 +730,7 @@ function Events() {
                 }
 
                 const json = await response.json();
-                const items = Array.isArray(json) ? json : json?.data || [];
+                const items = extractResponseCollection(json, ['events']);
                 const validEvents = items
                     .filter((item) => item && (item.title || item.slug || item.description_body || item.banner_image_url || item.live_stream_status))
                     .map((item) => ({

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
+import { extractResponseCollection } from "../../utils/apiResponse.js";
 
 const ACHIEVEMENT_API_URL = (() => {
   const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
@@ -173,13 +174,29 @@ function ActiveAchievement({ onCreateClick, onEditClick, onDataStateChange, onLo
         }
 
         const json = await response.json();
-        const items = Array.isArray(json) ? json : json?.data || [];
+        const items = extractResponseCollection(json, ["achievements", "home_achievements"]);
         const valid = items.filter(
-          (item) => item && (item.archivement_name || item.achievement_name || item.icon_type || item.icon_value || item.figures)
+          (item) => item && (
+            item.archivement_name ||
+            item.achievement_name ||
+            item.icon_type ||
+            item.icon_value ||
+            item.figures ||
+            item.title ||
+            item.subTitle ||
+            item.subtitle
+          )
         );
 
-        setAchievements(valid);
-        const hasData = valid.length > 0;
+        const normalizedAchievements = valid.map((item) => ({
+          id: item.id,
+          figures: item.figures || item.id || 0,
+          icon_type: item.icon_type || item.icon_value || item.icon || 'fas fa-award',
+          archivement_name: item.archivement_name || item.achievement_name || item.title || item.tagline || 'Achievement',
+        }));
+
+        setAchievements(normalizedAchievements);
+        const hasData = normalizedAchievements.length > 0;
         onDataStateChange?.(hasData);
         onLoadedChange?.(true);
       } catch (loadError) {

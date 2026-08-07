@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { extractResponseCollection } from '../../utils/apiResponse.js';
 import { auth } from '../../Authentication/auth';
 import Banner from '../banner/banner';
 import './portfolio.css';
@@ -473,23 +474,7 @@ function Portoflio() {
                 }
 
                 const json = await response.json();
-                const items = Array.isArray(json)
-                    ? json
-                    : Array.isArray(json?.data)
-                        ? json.data
-                        : Array.isArray(json?.data?.projects)
-                            ? json.data.projects
-                            : Array.isArray(json?.data?.portfolio)
-                                ? json.data.portfolio
-                                : Array.isArray(json?.data?.items)
-                                    ? json.data.items
-                                    : Array.isArray(json?.projects)
-                                        ? json.projects
-                                        : Array.isArray(json?.portfolio)
-                                            ? json.portfolio
-                                            : Array.isArray(json?.items)
-                                                ? json.items
-                                                : [];
+                const items = extractResponseCollection(json, ['projects', 'portfolio', 'items']);
                 const validProjects = items
                     .filter((item) => item && (item.project_name || item.slug || item.project_summary || item.project_details || item.cover_image_url))
                     .map((item) => ({

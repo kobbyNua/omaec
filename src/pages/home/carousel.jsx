@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Modal from "./homeModal"; 
-import { auth } from "../../Authentication/auth";
-
+import { auth } from "../../Authentication/auth";import { extractResponseCollection } from "../../utils/apiResponse.js";
 //add carousel modal
 function AddCarouselModal(){
      
@@ -45,7 +44,7 @@ const BACKEND_API_URL = (() => {
         const path = malformedMatch[3] || '';
         return `${host}:${port}${path}`;
     }
-
+    
     return cleaned;
 })();
 
@@ -394,8 +393,7 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
 
                 const json = await response.json();
 
-                // backend returns { status: true, data: [...] }
-                const items = Array.isArray(json) ? json : (json?.data || []);
+                const items = extractResponseCollection(json, ["home", "slides", "banners"]);
 
                 if (items.length > 0) {
                     const parsedSlides = items

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
+import { extractResponseCollection } from "../../utils/apiResponse.js";
 
 const SERVICE_API_URL = (() => {
   const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
@@ -12,6 +13,7 @@ const SERVICE_API_URL = (() => {
     return "/home_services";
   }
   const base = rawUrl.replace(/\/+$/g, "");
+  console.log(`Using SERVICE_API_URL: ${base}/home_services`);
   return `${base}/home_services`;
 })();
 
@@ -410,15 +412,15 @@ function ActiveService({ onCreateClick, onEditClick, onDataStateChange }) {
         }
 
         const json = await response.json();
-        const items = Array.isArray(json) ? json : json?.data || [];
+        const items = extractResponseCollection(json, ["services", "home_services"]);
 
         const validServices = items
-          .filter((item) => item && (item.title || item.icon_value || item.short_description))
+          .filter((item) => item && (item.title || item.subTitle || item.subtitle || item.short_description || item.description || item.icon_value || item.icon || item.tagline))
           .map((item) => ({
             id: item.id,
-            title: item.title || '',
-            icon_value: item.icon_value || item.icon || '',
-            short_description: item.short_description || item.description || '',
+            title: item.title || item.tagline || 'Service',
+            icon_value: item.icon_value || item.icon || item.icon_type || item.tagline || 'fas fa-briefcase',
+            short_description: item.short_description || item.description || item.subTitle || item.subtitle || item.tagline || '',
           }));
 
         setServices(validServices);

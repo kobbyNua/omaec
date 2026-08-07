@@ -3,6 +3,7 @@ import Banner from '../banner/banner';
 import './blog.css';
 import Modal from './blogModal';
 import { auth } from '../../Authentication/auth.jsx';
+import { extractResponseCollection } from '../../utils/apiResponse.js';
 
 const BLOG_API_BASE_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
@@ -538,7 +539,7 @@ function ActiveBlog({ onCreateCategoryClick, onCreatePostClick, onEditClick, onD
                     throw new Error('Unable to load blog posts.');
                 }
                 const json = await response.json().catch(() => null);
-                const items = Array.isArray(json) ? json : json?.data || [];
+                const items = extractResponseCollection(json, ['posts', 'blogPosts']);
                 const validPosts = items
                     .filter((item) => item && (item.title || item.slug || item.content || item.excerpt || item.image_url))
                     .map((item) => ({

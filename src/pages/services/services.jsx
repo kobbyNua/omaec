@@ -4,6 +4,7 @@ import Banner from '../banner/banner';
 import './services.css';
 import Modal from './servicesModal';
 import { auth } from '../../Authentication/auth.jsx';
+import { extractResponseCollection } from '../../utils/apiResponse.js';
 
 const SERVICE_API_BASE_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
@@ -400,7 +401,7 @@ function ActiveServicePage({ onCreateClick, onEditClick, onDataStateChange }) {
                 }
 
                 const json = await response.json();
-                const items = Array.isArray(json) ? json : json?.data || [];
+                const items = extractResponseCollection(json, ['services']);
                 const validServices = items
                     .filter((item) => item && (item.service_name || item.slug || item.image_url || item.description_body))
                     .map((item) => ({

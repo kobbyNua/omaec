@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Modal from './aboutModal';
 import { auth } from '../../Authentication/auth.jsx';
+import { extractResponseCollection } from '../../utils/apiResponse.js';
 
 const TEAM_API_BASE_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
@@ -382,7 +383,7 @@ function Team() {
                 }
 
                 const json = await response.json();
-                const items = Array.isArray(json) ? json : json?.data || [];
+                const items = extractResponseCollection(json, ['teamMembers']);
                 const validMembers = items
                     .filter((item) => item && (item.full_name || item.job_role || item.photo_url || item.linkedin_url || item.twitter_url))
                     .map((item) => ({
