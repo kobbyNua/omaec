@@ -30,14 +30,45 @@ const MEDIA_API_URL = (() => {
     return `${base}/media`;
 })();
 
+const MEDIA_BACKEND_ORIGIN = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        return window.location.origin;
+    }
+
+    const cleaned = rawUrl.replace(/\/\/+$/g, '');
+    try {
+        return new URL(cleaned).origin;
+    } catch {
+        return window.location.origin;
+    }
+})();
+
 const isAdminLoggedIn = () => {
     const adminAuth = window.localStorage.getItem('admin-auth');
     return adminAuth === 'true' || adminAuth === 'google' || adminAuth === 'firebase';
 };
 
 const isLoggedIn = () => {
-    const userAuth = window.localStorage.getItem('user-auth');
-    return Boolean(userAuth) || isAdminLoggedIn();
+    try {
+        if (auth?.currentUser) return true;
+    } catch (e) {
+        // ignore
+    }
+
+    const stored = window.localStorage.getItem('user-auth');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (parsed?.token) return true;
+            if (parsed?.email) return true;
+        } catch {
+            // If stored is a non-JSON value, only treat explicit truthy auth markers as logged in
+            if (stored === 'true' || stored === 'google' || stored === 'firebase') return true;
+        }
+    }
+
+    return isAdminLoggedIn();
 };
 
 const getAuthorizationToken = async () => {
@@ -76,25 +107,42 @@ const resolveMediaUrl = (value) => {
     if (!src) {
         return '';
     }
-
     if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
         return src;
     }
 
+    // If server stored absolute path like /var/www/html/..., strip server root
+    // and prefix with backend origin (same logic used in carousel).
     if (src.includes('/var/www/html')) {
-        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
-        return MEDIA_API_BASE_URL ? `${MEDIA_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
+        src = src.replace('/var/www/html', '');
+        return `${MEDIA_BACKEND_ORIGIN}${src}`;
     }
 
     if (src.startsWith('/')) {
-        const relativePath = src.replace(/^\/+/, '');
-        return MEDIA_API_BASE_URL ? `${MEDIA_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
+        return `${MEDIA_BACKEND_ORIGIN}${src}`;
     }
 
     return src;
 };
 
 const slugify = (value) => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+const isValidMediaUrl = (value) => {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) {
+        return false;
+    }
+
+    if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return true;
+    }
+
+    if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+        return true;
+    }
+
+    return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)(\?.*)?$/i.test(trimmed) || trimmed.includes('/media/uploads/');
+};
 
 function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, onSuccess }) {
     const [formData, setFormData] = useState({
@@ -331,29 +379,36 @@ function DefaultMediaPage({ onCreateClick }) {
                     <div className="container">
                         <div className="recent-video-works">
                             <h3>Recent Video Works</h3>
-                            <video controls>
-                                <source src="../media/sample-video.mp4" type="video/mp4" />
+                            <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80">
+                                <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
                                 Your browser does not support the video tag.
                             </video>
                         </div>
                         <div className="some-video-works">
-                            <h3>Some of Our Video Works</h3>
+                            <h3>
+                                Some of Our Video Works
+                                {isLoggedIn() && (
+                                    <button type="button" className="about-section-add-button section-add-button" onClick={onCreateClick} aria-label="Add Video Thumbnail">
+                                        <i className="fas fa-plus" aria-hidden="true" />
+                                    </button>
+                                )}
+                            </h3>
                             <div className="video-thumbnails">
                                 <div className="video-thumbnail">
-                                    <video controls>
-                                        <source src="../media/sample-video2.mp4" type="video/mp4" />
+                                    <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80">
+                                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
                                 <div className="video-thumbnail">
-                                    <video controls>
-                                        <source src="../media/sample-video3.mp4" type="video/mp4" />
+                                    <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80">
+                                        <source src="https://www.w3schools.com/html/movie.mp4" type="video/mp4" />
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
                                 <div className="video-thumbnail">
-                                    <video controls>
-                                        <source src="../media/sample-video4.mp4" type="video/mp4" />
+                                    <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80">
+                                        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm" />
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
@@ -390,13 +445,7 @@ function DefaultMediaPage({ onCreateClick }) {
                 </div>
             </div>
 
-            {isLoggedIn() && (
-                <div className="service-actions">
-                    <button type="button" className="about-section-add-button service-add-button" onClick={onCreateClick} aria-label="Create Media">
-                        <i className="fas fa-plus" aria-hidden="true" />
-                    </button>
-                </div>
-            )}
+            {/* single add buttons are shown in section headers; removed bottom duplicate */}
         </>
     );
 }
@@ -430,7 +479,25 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
                 const json = await response.json();
                 const items = Array.isArray(json) ? json : json?.data || [];
                 const validItems = items
-                    .filter((item) => item && (item.title || item.media_type || item.file_url || item.thumbnail || item.alt_text))
+                    .filter((item) => {
+                        if (!item) {
+                            return false;
+                        }
+
+                        const hasMeta = item.title || item.media_type || item.file_url || item.thumbnail || item.alt_text;
+                        if (!hasMeta) {
+                            return false;
+                        }
+
+                        const mediaType = String(item.media_type || 'image').toLowerCase();
+                        const fileUrl = item.file_url || item.url || '';
+
+                        if (mediaType === 'video') {
+                            return Boolean(fileUrl && (fileUrl.startsWith('http://') || fileUrl.startsWith('https://') || fileUrl.startsWith('/')));
+                        }
+
+                        return isValidMediaUrl(fileUrl);
+                    })
                     .map((item) => ({
                         id: item.id,
                         title: item.title || '',
@@ -460,10 +527,11 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
         return () => controller.abort();
     }, [onDataStateChange]);
 
-    const videos = useMemo(() => mediaItems.filter((item) => item.media_type === 'video'), [mediaItems]);
-    const images = useMemo(() => mediaItems.filter((item) => item.media_type !== 'video'), [mediaItems]);
-    const recentVideo = videos[0] || null;
-    const thumbnailVideos = videos.slice(1, 5);
+    const videos = useMemo(() => mediaItems.filter((item) => item.media_type === 'video' && isValidMediaUrl(item.file_url)), [mediaItems]);
+    const images = useMemo(() => mediaItems.filter((item) => item.media_type !== 'video' && isValidMediaUrl(item.file_url)), [mediaItems]);
+    // Use the last item as the most recently posted video and show up to four previous videos as thumbnails
+    const recentVideo = videos.length > 0 ? videos[videos.length - 1] : null;
+    const thumbnailVideos = videos.length > 1 ? videos.slice(Math.max(0, videos.length - 5), videos.length - 1) : [];
 
     if (!hasData && !loading) {
         return null;
@@ -485,34 +553,49 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
                         ) : (
                             <>
                                 <div className="recent-video-works">
+                                    <h3>Recent Video Works</h3>
                                     {recentVideo ? (
                                         <>
-                                            <h3>{recentVideo.title}</h3>
+                                            <h4>{recentVideo.title}</h4>
                                             <video controls poster={recentVideo.thumbnail_url || recentVideo.file_url}>
                                                 <source src={resolveMediaUrl(recentVideo.file_url)} type="video/mp4" />
                                                 Your browser does not support the video tag.
                                             </video>
                                         </>
                                     ) : (
-                                        <h3>No recent video available</h3>
+                                        <p>No recent video available</p>
                                     )}
                                 </div>
 
                                 <div className="some-video-works">
-                                    <h3>Some of Our Video Works</h3>
+                                    <h3>
+                                        Some of Our Video Works
+                                        {isLoggedIn() && (
+                                            <button type="button" className="about-section-add-button section-add-button" onClick={onCreateClick} aria-label="Add Video Thumbnail">
+                                                <i className="fas fa-plus" aria-hidden="true" />
+                                            </button>
+                                        )}
+                                    </h3>
                                     <div className="video-thumbnails">
                                         {thumbnailVideos.length > 0 ? thumbnailVideos.map((video) => (
-                                            <div className="video-thumbnail" key={video.id || video.title}>
-                                                <video controls poster={video.thumbnail_url || video.file_url}>
-                                                    <source src={resolveMediaUrl(video.file_url)} type="video/mp4" />
-                                                    Your browser does not support the video tag.
-                                                </video>
-                                                <p>{video.title}</p>
-                                                {isLoggedIn() && (
-                                                    <button type="button" className="service-card-edit-button" onClick={() => onEditClick(video)} aria-label={`Edit ${video.title}`}>
-                                                        <i className="fas fa-edit" aria-hidden="true" />
-                                                    </button>
-                                                )}
+                                            <div className="video-thumbnail video-card" key={video.id || video.title}>
+                                                <div className="video-thumb">
+                                                    <video controls poster={video.thumbnail_url || video.file_url}>
+                                                        <source src={resolveMediaUrl(video.file_url)} type="video/mp4" />
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                </div>
+                                                <div className="video-meta">
+                                                    <div className="title">{video.title}</div>
+                                                    <div className="subtitle">Video</div>
+                                                    {isLoggedIn() && (
+                                                        <div style={{marginTop: '0.5rem'}}>
+                                                            <button type="button" className="service-card-edit-button" onClick={() => onEditClick(video)} aria-label={`Edit ${video.title}`}>
+                                                                <i className="fas fa-edit" aria-hidden="true" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         )) : <p>No additional videos available</p>}
                                     </div>
@@ -552,13 +635,7 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
                 </div>
             </div>
 
-            {isLoggedIn() && (
-                <div className="service-actions">
-                    <button type="button" className="about-section-add-button service-add-button" onClick={onCreateClick} aria-label="Create Media">
-                        <i className="fas fa-plus" aria-hidden="true" />
-                    </button>
-                </div>
-            )}
+            {/* single add buttons are shown in section headers; removed bottom duplicate */}
         </>
     );
 }

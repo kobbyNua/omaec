@@ -13,7 +13,6 @@ const SERVICE_API_URL = (() => {
     return "/home_services";
   }
   const base = rawUrl.replace(/\/+$/g, "");
-  console.log(`Using SERVICE_API_URL: ${base}/home_services`);
   return `${base}/home_services`;
 })();
 
@@ -390,58 +389,132 @@ function ActiveService({ onCreateClick, onEditClick, onDataStateChange }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [hasData, setHasData] = useState(false);
+  const [rawJson, setRawJson] = useState(null);
+  const [rawResponseText, setRawResponseText] = useState('');
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const loadServices = async () => {
-      try {
-        const authToken = await getAuthorizationToken();
-        const headers = {};
-        if (authToken) {
-          headers.Authorization = authToken;
+    useEffect(() => {
+      const controller = new AbortController();
+      const loadServices = async () => {
+        try {
+          const authToken = await getAuthorizationToken();
+          const headers = {};
+          if (authToken) {
+            headers.Authorization = authToken;
+          }
+
+            const response = await fetch(SERVICE_API_URL, {
+            method: 'GET',
+            signal: controller.signal,
+            headers,
+          });
+            const contentType = response.headers.get('content-type') || response.headers.get('Content-Type') || '';
+
+          const text = await response.text();
+          setRawResponseText(text);
+
+          const extractAllJsonSegments = (txt) => {
+            const results = [];
+            if (!txt) return results;
+            // scan for { or [ and try to parse balanced JSON segments
+            for (let i = 0; i < txt.length; i++) {
+              const ch = txt[i];
+              if (ch !== '{' && ch !== '[') continue;
+              const opener = ch;
+              const closer = opener === '{' ? '}' : ']';
+              let depth = 0;
+              for (let j = i; j < txt.length; j++) {
+                const c = txt[j];
+                if (c === opener) depth++;
+                else if (c === closer) depth--;
+                if (depth === 0) {
+                  const candidate = txt.slice(i, j + 1);
+                  try {
+                    const parsed = JSON.parse(candidate);
+                    results.push(parsed);
+                    i = j; // advance outer index
+                  } catch (e) {
+                    // ignore parse error, keep scanning
+                  }
+                  break;
+                }
+              }
+            }
+            // If nothing found, try a final JSON.parse
+            if (results.length === 0) {
+              try { results.push(JSON.parse(txt)); } catch (e) {}
+            }
+            return results;
+          };
+
+          const candidates = extractAllJsonSegments(text);
+          // candidates parsed; debug logging removed
+
+          // scoring function: prefer arrays whose items contain service-like keys
+          const scoreCandidateForService = (c) => {
+            const arr = extractResponseCollection(c, ['services','home_services', 'data']);
+            if (!Array.isArray(arr) || arr.length === 0) return 0;
+            const sample = arr[0] || {};
+            let score = 0;
+            if (sample.short_description || sample.description) score += 3;
+            if (sample.icon_value || sample.icon || sample.icon_type) score += 2;
+            if (sample.title) score += 1;
+            // deprioritize carousel-like items
+            if (sample.image_url || sample.photo_url || sample.photo) score -= 3;
+            return score;
+          };
+
+          let selectedJson = null;
+          if (candidates.length === 1) {
+            selectedJson = candidates[0];
+          } else if (candidates.length > 1) {
+            let best = null;
+            let bestScore = -Infinity;
+            candidates.forEach((c) => {
+              const s = scoreCandidateForService(c);
+              if (s > bestScore) { bestScore = s; best = c; }
+            });
+            selectedJson = best || candidates[0];
+          }
+
+          // selected JSON candidate for services determined
+          setRawJson(selectedJson);
+
+          if (!response.ok) {
+            throw new Error('Failed to load services');
+          }
+
+          const items = extractResponseCollection(selectedJson, ["services", "home_services"]);
+          const altSource = Array.isArray(selectedJson) ? selectedJson : (selectedJson?.data || []);
+          const sourceArray = items.length ? items : (Array.isArray(altSource) ? altSource : []);
+
+          const validServices = sourceArray
+            .filter((item) => item && (item.title || item.subTitle || item.subtitle || item.short_description || item.description || item.icon_value || item.icon || item.tagline))
+            .map((item) => ({
+              id: item.id,
+              title: item.title || item.tagline || 'Service',
+              icon_value: item.icon_value || item.icon || item.icon_type || item.tagline || 'fas fa-briefcase',
+              short_description: item.short_description || item.description || item.subTitle || item.subtitle || item.tagline || '',
+            }));
+
+          setServices(validServices);
+          const has = validServices.length > 0;
+          setHasData(has);
+          onDataStateChange?.(has);
+        } catch (error_) {
+          if (error_?.name === 'AbortError') {
+            return;
+          }
+          setError(error_.message || 'Unable to load services');
+          setHasData(false);
+          onDataStateChange?.(false);
+        } finally {
+          setLoading(false);
         }
+      };
 
-        const response = await fetch(SERVICE_API_URL, {
-          method: 'GET',
-          signal: controller.signal,
-          headers,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to load services');
-        }
-
-        const json = await response.json();
-        const items = extractResponseCollection(json, ["services", "home_services"]);
-
-        const validServices = items
-          .filter((item) => item && (item.title || item.subTitle || item.subtitle || item.short_description || item.description || item.icon_value || item.icon || item.tagline))
-          .map((item) => ({
-            id: item.id,
-            title: item.title || item.tagline || 'Service',
-            icon_value: item.icon_value || item.icon || item.icon_type || item.tagline || 'fas fa-briefcase',
-            short_description: item.short_description || item.description || item.subTitle || item.subtitle || item.tagline || '',
-          }));
-
-        setServices(validServices);
-        const has = validServices.length > 0;
-        setHasData(has);
-        onDataStateChange?.(has);
-      } catch (error_) {
-        if (error_?.name === 'AbortError') {
-          return;
-        }
-        setError(error_.message || 'Unable to load services');
-        setHasData(false);
-        onDataStateChange?.(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadServices();
-    return () => controller.abort();
-  }, [onDataStateChange]);
+      loadServices();
+      return () => controller.abort();
+    }, [onDataStateChange]);
 
   if (!hasData && !loading) {
     return null;

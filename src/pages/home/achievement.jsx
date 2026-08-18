@@ -8,10 +8,10 @@ const ACHIEVEMENT_API_URL = (() => {
   const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
   if (!rawUrl) {
     console.warn('VITE_APP_URL is not defined. Falling back to /home_achievements');
-    return "/home_achiebements";
+    return "/home_achievements";
   }
   const base = rawUrl.replace(/\/+$/g, "");
-  return `${base}/home_achiebements`;
+  return `${base}/home_achievements`;
 })();
 
 const isAdminLoggedIn = () => {
@@ -151,69 +151,148 @@ function ActiveAchievement({ onCreateClick, onEditClick, onDataStateChange, onLo
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [rawJson, setRawJson] = useState(null);
+  const [rawResponseText, setRawResponseText] = useState('');
+  const [logs, setLogs] = useState([]);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const addLog = (msg) => {
+    try {
+      const entry = typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2);
+      setLogs((s) => [...s.slice(-50), entry]);
+      // also print to console for developer convenience
+      // eslint-disable-next-line no-console
+      console.debug('ActiveAchievementLog:', entry);
+    } catch (e) {
+      // ignore
+    }
+  };
 
-    const loadAchievements = async () => {
-      try {
-        const authToken = await getAuthorizationToken();
-        const headers = {};
-        if (authToken) {
-          headers.Authorization = authToken;
+    useEffect(() => {
+      const controller = new AbortController();
+
+      const loadAchievements = async () => {
+        try {
+          const authToken = await getAuthorizationToken();
+          const headers = {};
+          if (authToken) {
+            headers.Authorization = authToken;
+          }
+
+          const response = await fetch(ACHIEVEMENT_API_URL, {
+            method: 'GET',
+            signal: controller.signal,
+            headers,
+          });
+
+          addLog(`response status: ${response.status} ok:${response.ok}`);
+          const contentType = response.headers.get('content-type') || response.headers.get('Content-Type') || '';
+          addLog(`content-type: ${contentType}`);
+
+          const text = await response.text();
+          setRawResponseText(text);
+          addLog('raw response text length: ' + (text ? text.length : 0));
+
+          const extractAllJsonSegments = (txt) => {
+            const results = [];
+            if (!txt) return results;
+            for (let i = 0; i < txt.length; i++) {
+              const ch = txt[i];
+              if (ch !== '{' && ch !== '[') continue;
+              const opener = ch;
+              const closer = opener === '{' ? '}' : ']';
+              let depth = 0;
+              for (let j = i; j < txt.length; j++) {
+                const c = txt[j];
+                if (c === opener) depth++;
+                else if (c === closer) depth--;
+                if (depth === 0) {
+                  const candidate = txt.slice(i, j + 1);
+                  try {
+                    const parsed = JSON.parse(candidate);
+                    results.push(parsed);
+                    i = j;
+                  } catch (e) {
+                    // ignore
+                  }
+                  break;
+                }
+              }
+            }
+            if (results.length === 0) {
+              try { results.push(JSON.parse(txt)); } catch (e) {}
+            }
+            return results;
+          };
+
+          const candidates = extractAllJsonSegments(text);
+          addLog('JSON candidates count: ' + candidates.length);
+          candidates.forEach((c, idx) => addLog({ candidate: idx, extracted: extractResponseCollection(c, ['achievements','home_achievements','data']) }));
+
+          const scoreCandidateForAchievement = (c) => {
+            const arr = extractResponseCollection(c, ['achievements','home_achievements','data']);
+            if (!Array.isArray(arr) || arr.length === 0) return 0;
+            const sample = arr[0] || {};
+            let score = 0;
+            if (sample.figures || sample.id) score += 3;
+            if (sample.archivement_name || sample.achievement_name || sample.title) score += 2;
+            if (sample.icon_type || sample.icon_value) score += 1;
+            // deprioritize image/carousel-like
+            if (sample.image_url || sample.photo_url || sample.photo) score -= 3;
+            return score;
+          };
+
+          let selectedJson = null;
+          if (candidates.length === 1) selectedJson = candidates[0];
+          else if (candidates.length > 1) {
+            let best = null; let bestScore = -Infinity;
+            candidates.forEach((c) => {
+              const s = scoreCandidateForAchievement(c);
+              if (s > bestScore) { bestScore = s; best = c; }
+            });
+            selectedJson = best || candidates[0];
+          }
+
+          addLog('selected JSON candidate: ' + (selectedJson ? (Array.isArray(selectedJson) ? `array length ${selectedJson.length}` : `keys: ${Object.keys(selectedJson || {}).slice(0,5).join(',')}`) : 'null'));
+          setRawJson(selectedJson);
+
+          if (!response.ok) {
+            throw new Error('Failed to load achievements');
+          }
+
+          const selected = selectedJson;
+          const items = extractResponseCollection(selected, ["achievements", "home_achievements"]);
+          const altSource = Array.isArray(selected) ? selected : (selected?.data || []);
+          const sourceArray = items.length ? items : (Array.isArray(altSource) ? altSource : []);
+
+          // Accept any object entries as achievements — some backends use different keys
+          const valid = sourceArray.filter((item) => item && typeof item === 'object');
+
+          const normalizedAchievements = valid.map((item) => ({
+            id: item.id || item.ID || null,
+            figures: item.figures || item.count || item.value || item.id || 0,
+            icon_type: item.icon_type || item.icon_value || item.icon || item.iconType || 'fas fa-award',
+            archivement_name: item.archivement_name || item.achievement_name || item.title || item.name || item.tagline || 'Achievement',
+          }));
+
+          setAchievements(normalizedAchievements);
+          const hasData = normalizedAchievements.length > 0;
+          onDataStateChange?.(hasData);
+          onLoadedChange?.(true);
+        } catch (loadError) {
+          if (loadError?.name === 'AbortError') {
+            return;
+          }
+          setError(loadError.message || 'Unable to load achievements');
+          onDataStateChange?.(false);
+          onLoadedChange?.(true);
+        } finally {
+          setLoading(false);
         }
+      };
 
-        const response = await fetch(ACHIEVEMENT_API_URL, {
-          method: 'GET',
-          signal: controller.signal,
-          headers,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to load achievements');
-        }
-
-        const json = await response.json();
-        const items = extractResponseCollection(json, ["achievements", "home_achievements"]);
-        const valid = items.filter(
-          (item) => item && (
-            item.archivement_name ||
-            item.achievement_name ||
-            item.icon_type ||
-            item.icon_value ||
-            item.figures ||
-            item.title ||
-            item.subTitle ||
-            item.subtitle
-          )
-        );
-
-        const normalizedAchievements = valid.map((item) => ({
-          id: item.id,
-          figures: item.figures || item.id || 0,
-          icon_type: item.icon_type || item.icon_value || item.icon || 'fas fa-award',
-          archivement_name: item.archivement_name || item.achievement_name || item.title || item.tagline || 'Achievement',
-        }));
-
-        setAchievements(normalizedAchievements);
-        const hasData = normalizedAchievements.length > 0;
-        onDataStateChange?.(hasData);
-        onLoadedChange?.(true);
-      } catch (loadError) {
-        if (loadError?.name === 'AbortError') {
-          return;
-        }
-        setError(loadError.message || 'Unable to load achievements');
-        onDataStateChange?.(false);
-        onLoadedChange?.(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAchievements();
-    return () => controller.abort();
-  }, [onDataStateChange, onLoadedChange, refreshKey]);
+      loadAchievements();
+      return () => controller.abort();
+    }, [onDataStateChange, onLoadedChange, refreshKey]);
 
   if (!loading && achievements.length === 0) {
     return null;
@@ -325,7 +404,7 @@ function Achievement() {
       archivement_name: formData.archivement_name.trim(),
     };
 
-    console.log('Sending achievement data:', payload);
+    // debug logging removed
 
     try {
       const response = await fetch(ACHIEVEMENT_API_URL, {
@@ -335,7 +414,7 @@ function Achievement() {
       });
 
       const data = await response.json().catch(() => null);
-      console.log('Backend response:', response.status, data);
+      // debug logging removed
 
       if (!response.ok) {
         const errorMsg = data?.message || `HTTP ${response.status}`;
@@ -397,9 +476,7 @@ function Achievement() {
       archivement_name: formData.archivement_name.trim(),
     };
 
-    console.log('Sending PUT request to:', endpoint);
-    console.log('Sending edit achievement data:', payload);
-    console.log('Headers:', headers);
+    // debug logging removed
 
     try {
       const response = await fetch(endpoint, {
@@ -408,9 +485,7 @@ function Achievement() {
         body: JSON.stringify(payload),
       });
 
-      console.log('PUT Response received:', response.status, response.statusText);
       const data = await response.json().catch(() => null);
-      console.log('Backend response data:', data);
 
       if (!response.ok) {
         const errorMsg = data?.message || `HTTP ${response.status}`;

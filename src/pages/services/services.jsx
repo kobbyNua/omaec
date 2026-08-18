@@ -31,6 +31,20 @@ const SERVICE_API_URL = (() => {
     return `${base}/services`;
 })();
 
+const SERVICE_BACKEND_ORIGIN = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        return window.location.origin;
+    }
+
+    const cleaned = rawUrl.replace(/\/\/+$/g, '');
+    try {
+        return new URL(cleaned).origin;
+    } catch {
+        return window.location.origin;
+    }
+})();
+
 const isAdminLoggedIn = () => {
     const adminAuth = window.localStorage.getItem('admin-auth');
     return adminAuth === 'true' || adminAuth === 'google' || adminAuth === 'firebase';
@@ -83,17 +97,12 @@ const resolveServiceImageUrl = (value) => {
     }
 
     if (src.includes('/var/www/html')) {
-        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
-        return SERVICE_API_BASE_URL
-            ? `${SERVICE_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/')
-            : src;
+        src = src.replace('/var/www/html', '');
+        return `${SERVICE_BACKEND_ORIGIN}${src}`;
     }
 
     if (src.startsWith('/')) {
-        const relativePath = src.replace(/^\/+/, '');
-        return SERVICE_API_BASE_URL
-            ? `${SERVICE_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/')
-            : src;
+        return `${SERVICE_BACKEND_ORIGIN}${src}`;
     }
 
     return src;

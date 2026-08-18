@@ -11,8 +11,11 @@
   top: 0;
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100vw;
   z-index: 1000;
   font-family: Arial, sans-serif;
+  overflow-x: hidden;
 }
 
 .navbar .container {
@@ -121,10 +124,33 @@
    Mobile Responsive Styles (max-width: 768px)
    ========================================================================== */
 @media screen and (max-width: 768px) {
+  .navbar .container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+  }
+
+  .navbar-logo {
+    max-width: calc(100% - 52px);
+    min-width: 0;
+  }
+
+  .navbar-logo a {
+    max-width: 100%;
+    gap: 0.5rem;
+  }
+
+  .navbar-logo a img {
+    max-width: 120px;
+    height: auto;
+  }
+
   /* Show Hamburger Icon */
   .navbar-toggle {
     display: flex;
     z-index: 1001; /* Stay on top of the slide-out menu */
+    flex-shrink: 0;
   }
 
   /* Slide-out Sidebar Drawer */
@@ -133,22 +159,31 @@
     flex-direction: column;
     position: fixed;
     top: 0;
-    right: 0;
-    width: 280px;
+    right: -100vw;
+    width: min(280px, calc(100vw - 24px));
+    max-width: 100%;
     height: 100vh;
     background-color: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: -8px 0 30px rgba(0, 0, 0, 0.08);
-    padding: 80px 24px 20px 24px;
-    transform: translateX(100%);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 80px 16px 20px 16px;
+    transform: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s ease;
     z-index: 999;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   /* Active state for dropdown drawer */
   .navbar-links.active {
-    transform: translateX(0);
+    right: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .navbar-links li {
@@ -168,7 +203,10 @@
     color: #1e293b;
     font-size: 17px;
     font-weight: 550;
-    display: block; 
+    display: block;
+    width: 100%;
+    white-space: normal;
+    word-break: break-word;
     transition: color 0.2s ease, transform 0.2s ease;
   }
 
@@ -215,6 +253,31 @@
   color: #007bff;
 }
 
+/* Round create/add buttons with centered icon */
+.service-create-action,
+.service-create-action-round,
+.carousel-add-button,
+.carousel-open-btn {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* ensure icons inside are centered and not offset by padding */
+.service-create-action i,
+.carousel-add-button i,
+.carousel-open-btn i {
+  display: inline-block;
+  transform: none !important;
+}
+
 .navbar.scrolled .navbar-user-btn {
   color: #333333;
 }
@@ -226,8 +289,10 @@
     font-weight: 550;
     width: 100%;
     justify-content: space-between;
+    gap: 0.5rem;
+    white-space: normal;
+    word-break: break-word;
     transition: color 0.2s ease;
-  
   }
   
   .navbar-user-btn:hover {

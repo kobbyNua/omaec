@@ -30,6 +30,20 @@ const BLOG_API_URL = (() => {
     return `${base}/blog`;
 })();
 
+const BLOG_BACKEND_ORIGIN = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        return window.location.origin;
+    }
+
+    try {
+        const parsed = new URL(rawUrl, window.location.origin);
+        return parsed.origin;
+    } catch {
+        return window.location.origin;
+    }
+})();
+
 const CATEGORY_API_URL = (() => {
     const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
     if (!rawUrl) {
@@ -108,16 +122,18 @@ const resolveBlogImageUrl = (value) => {
     }
 
     src = src.replace(/\\/g, '/');
+    // Normalize server absolute paths and prefix with backend origin so browser can fetch them
     if (src.includes('/var/www/html')) {
-        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
-        return BLOG_API_BASE_URL ? `${BLOG_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
+        src = src.replace('/var/www/html', '');
+        return `${BLOG_BACKEND_ORIGIN}${src}`;
     }
+
     if (src.startsWith('/')) {
-        const relativePath = src.replace(/^\/+/, '');
-        return BLOG_API_BASE_URL ? `${BLOG_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
+        return `${BLOG_BACKEND_ORIGIN}${src}`;
     }
+
     if (src.startsWith('uploads/posts/') || src.startsWith('storage/') || src.startsWith('public/')) {
-        return BLOG_API_BASE_URL ? `${BLOG_API_BASE_URL}/${src}`.replace(/\/{2,}/g, '/') : src;
+        return `${BLOG_BACKEND_ORIGIN}/${src}`.replace(/\/{2,}/g, '/');
     }
 
     return src;

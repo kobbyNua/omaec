@@ -23,6 +23,16 @@ const PORTFOLIO_API_ORIGIN = (() => {
     }
 })();
 
+const isAdminLoggedIn = () => {
+    const adminAuth = window.localStorage.getItem('admin-auth');
+    return adminAuth === 'true' || adminAuth === 'google' || adminAuth === 'firebase';
+};
+
+const isLoggedIn = () => {
+    const userAuth = window.localStorage.getItem('user-auth');
+    return Boolean(userAuth) || isAdminLoggedIn();
+};
+
 const DEFAULT_PORTFOLIO = [
     {
         id: 'default-1',
@@ -373,7 +383,7 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
     );
 }
 
-function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit }) {
+function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit, canManageContent }) {
     return (
         <>
             <Banner>
@@ -382,11 +392,13 @@ function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit }) {
             </Banner>
             <div className="portfolio-content">
                 <div className="container">
-                    <div className="portfolio-header-row">
-                        <button type="button" className="portfolio-add-button" onClick={onOpenCreate} aria-label="Add Project">
-                            <i className="fas fa-plus" aria-hidden="true" />
-                        </button>
-                    </div>
+                    {canManageContent && (
+                        <div className="portfolio-header-row">
+                            <button type="button" className="portfolio-add-button" onClick={onOpenCreate} aria-label="Add Project">
+                                <i className="fas fa-plus" aria-hidden="true" />
+                            </button>
+                        </div>
+                    )}
                     <h2>Our Amazing Works</h2>
                     <p>Explore our portfolio to see the latest projects and creative solutions we've delivered.</p>
                     <div className="portfolio-gallery">
@@ -408,9 +420,9 @@ function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit }) {
     );
 }
 
-function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit }) {
+function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit, canManageContent }) {
     if (!project) {
-        return <DefaultPortfolio projects={projects} onOpenCreate={onOpenCreate} onOpenEdit={onOpenEdit} />;
+        return <DefaultPortfolio projects={projects} onOpenCreate={onOpenCreate} onOpenEdit={onOpenEdit} canManageContent={canManageContent} />;
     }
 
     return (
@@ -421,11 +433,13 @@ function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit }) {
             </Banner>
             <div className="portfolio-content">
                 <div className="container">
-                    <div className="portfolio-header-row">
-                        <button type="button" className="portfolio-add-button" onClick={onOpenCreate} aria-label="Add Project">
-                            <i className="fas fa-plus" aria-hidden="true" />
-                        </button>
-                    </div>
+                    {canManageContent && (
+                        <div className="portfolio-header-row">
+                            <button type="button" className="portfolio-add-button" onClick={onOpenCreate} aria-label="Add Project">
+                                <i className="fas fa-plus" aria-hidden="true" />
+                            </button>
+                        </div>
+                    )}
                     <div className="portfolio-active-card">
                         <img src={resolveProjectImage(project.cover_image_url)} alt={project.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
                         <div className="portfolio-active-body">
@@ -434,9 +448,11 @@ function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit }) {
                             <p><strong>Client:</strong> {project.client_name}</p>
                             <p><strong>Completed:</strong> {project.completion_date}</p>
                             <p><strong>Project URL:</strong> <a href={project.project_url} target="_blank" rel="noreferrer">{project.project_url}</a></p>
-                            <button type="button" className="portfolio-edit-button" onClick={() => onOpenEdit(project)} aria-label={`Edit ${project.project_name}`}>
-                                <i className="fas fa-edit" aria-hidden="true" />
-                            </button>
+                            {canManageContent && (
+                                <button type="button" className="portfolio-edit-button" onClick={() => onOpenEdit(project)} aria-label={`Edit ${project.project_name}`}>
+                                    <i className="fas fa-edit" aria-hidden="true" />
+                                </button>
+                            )}
                         </div>
                     </div>
                     <div className="portfolio-gallery portfolio-gallery-active">
@@ -464,6 +480,7 @@ function Portoflio() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    const canManageContent = isLoggedIn();
 
     useEffect(() => {
         const loadProjects = async () => {
@@ -507,9 +524,9 @@ function Portoflio() {
 
     return (
         <>
-            <DefaultPortfolio projects={projects} onOpenCreate={() => { setSelectedProject(null); setIsModalOpen(true); }} onOpenEdit={(project) => { setSelectedProject(project); setIsModalOpen(true); }} />
+            <DefaultPortfolio projects={projects} onOpenCreate={() => { setSelectedProject(null); setIsModalOpen(true); }} onOpenEdit={(project) => { setSelectedProject(project); setIsModalOpen(true); }} canManageContent={canManageContent} />
             {slug && activeProject ? (
-                <ActivePortfolio project={activeProject} projects={projects} onOpenCreate={() => { setSelectedProject(null); setIsModalOpen(true); }} onOpenEdit={(project) => { setSelectedProject(project); setIsModalOpen(true); }} />
+                <ActivePortfolio project={activeProject} projects={projects} onOpenCreate={() => { setSelectedProject(null); setIsModalOpen(true); }} onOpenEdit={(project) => { setSelectedProject(project); setIsModalOpen(true); }} canManageContent={canManageContent} />
             ) : null}
             <PortfolioModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedProject ? 'Edit Project' : 'Create Project'} submitLabel={selectedProject ? 'Update Project' : 'Create Project'} initialValues={selectedProject || {}} onSuccess={() => setRefreshKey((value) => value + 1)} />
         </>

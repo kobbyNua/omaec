@@ -8,6 +8,13 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 2rem;
+    width: 100%;
+}
+
+.events-header-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.5rem;
 }
 
 .upcoming-events {
@@ -56,7 +63,7 @@
 
 .events {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
     gap: 2rem;
     align-items: start;
 }
@@ -66,6 +73,28 @@
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.event-featured-card {
+    width: 100%;
+}
+
+.event-media-preview {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #000;
+}
+
+.event-media-preview iframe,
+.event-media-preview-image-only,
+.event-media-preview img {
+    display: block;
+    width: 100%;
+    min-height: 260px;
+    height: 100%;
+    max-height: 480px;
+    object-fit: cover;
 }
 
 .live-events-streaming video {
@@ -87,6 +116,10 @@
 .upcoming-events-list {
     display: grid;
     gap: 1.5rem;
+}
+
+.event-item {
+    position: relative;
 }
 
 .event-item a {
@@ -148,16 +181,18 @@
 
 .recent-events-gallery {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0 0.25rem;
 }
 
 .event-photo-item {
     position: relative;
     overflow: hidden;
-    border-radius: 0;
+    border-radius: 10px;
     height: 350px;
     cursor: pointer;
+    margin: 0 0.25rem 0.75rem;
 }
 
 .event-photo-item img {
@@ -233,7 +268,12 @@
     box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
 }
 
+.event-featured-card {
+    position: relative;
+}
+
 .event-edit-button-live {
+    position: absolute;
     top: 0.75rem;
     right: 0.75rem;
     z-index: 5;
@@ -268,7 +308,8 @@
 .recent-events-gallery {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0;
+    gap: 0.75rem;
+    padding: 0 0.25rem;
 }
 
 .event-photo-item {
@@ -276,6 +317,7 @@
     overflow: hidden;
     height: 350px;
     cursor: pointer;
+    margin: 0 0.25rem 0.75rem;
 }
 
 .event-photo-item img {
@@ -499,12 +541,36 @@
 }
 
 @media screen and (max-width: 768px) {
+    .events-content .container {
+        padding: 0 1rem;
+    }
+
     .events {
         grid-template-columns: 1fr;
     }
 
+    .live-events-streaming,
+    .upcoming-events-list {
+        width: 100%;
+    }
+
+    .event-item a {
+        grid-template-columns: 1fr;
+    }
+
+    .event-item img {
+        height: 180px;
+    }
+
     .recent-events-gallery {
         grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        padding: 0 0.15rem;
+    }
+
+    .event-photo-item {
+        height: 220px;
+        margin: 0 0.15rem 0.75rem;
     }
 
     .event-form-grid {
@@ -513,5 +579,28 @@
 
     .form-group.full-width {
         grid-column: auto;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .recent-events-gallery {
+        grid-template-columns: 1fr;
+    }
+
+    .event-photo-item {
+        height: 210px;
+    }
+
+    .upcoming-events,
+    .live-events-streaming,
+    .upcoming-events-list {
+        padding: 1rem;
+    }
+
+    .event-media-preview iframe,
+    .event-media-preview-image-only,
+    .event-media-preview img {
+        min-height: 200px;
+        max-height: 300px;
     }
 }

@@ -29,6 +29,20 @@ const EVENT_API_URL = (() => {
     return `${base}/events`;
 })();
 
+const EVENT_BACKEND_ORIGIN = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+    if (!rawUrl) {
+        return window.location.origin;
+    }
+
+    try {
+        const parsed = new URL(rawUrl, window.location.origin);
+        return parsed.origin;
+    } catch {
+        return window.location.origin;
+    }
+})();
+
 const isAdminLoggedIn = () => {
     const adminAuth = window.localStorage.getItem("admin-auth");
     return adminAuth === "true" || adminAuth === "google" || adminAuth === "firebase";
@@ -90,14 +104,15 @@ const resolveEventImageUrl = (value) => {
         return src;
     }
 
+    // If server-stored absolute path like /var/www/html/..., strip server root
+    // and prefix with backend origin so the browser can fetch it.
     if (src.includes("/var/www/html")) {
-        const relativePath = src.replace("/var/www/html", "").replace(/^\/+/, "");
-        return EVENT_API_BASE_URL ? `${EVENT_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, "/") : src;
+        src = src.replace("/var/www/html", "");
+        return `${EVENT_BACKEND_ORIGIN}${src}`;
     }
 
     if (src.startsWith("/")) {
-        const relativePath = src.replace(/^\/+/, "");
-        return EVENT_API_BASE_URL ? `${EVENT_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, "/") : src;
+        return `${EVENT_BACKEND_ORIGIN}${src}`;
     }
 
     return src;
@@ -363,21 +378,30 @@ function EventModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         }
 
         try {
-            const endpoint = initialValues?.id ? `${EVENT_API_URL}/${initialValues.id}` : EVENT_API_URL;
-            const response = await fetch(endpoint, {
-                method: initialValues?.id ? "PUT" : "POST",
-                headers,
-                body: payload,
-            });
+                const endpoint = initialValues?.id ? `${EVENT_API_URL}/${initialValues.id}` : EVENT_API_URL;
+                console.debug('Submitting event to', endpoint);
+                const response = await fetch(endpoint, {
+                    method: initialValues?.id ? "PUT" : "POST",
+                    headers,
+                    body: payload,
+                });
 
-            const data = await response.json().catch(() => null);
-            if (!response.ok || data?.status === false) {
-                throw new Error(data?.message || "Unable to save event.");
-            }
+                const text = await response.text().catch(() => null);
+                let data = null;
+                try {
+                    data = text ? JSON.parse(text) : null;
+                } catch (e) {
+                    // not JSON
+                }
 
-            setStatus(data?.message || (initialValues?.id ? "Event updated successfully." : "Event created successfully."));
-            onSuccess?.();
-            setTimeout(() => onClose?.(), 300);
+                if (!response.ok || data?.status === false) {
+                    console.error('Event save failed', { status: response.status, statusText: response.statusText, body: text, parsed: data });
+                    throw new Error(data?.message || `Unable to save event. (${response.status})`);
+                }
+
+                setStatus(data?.message || (initialValues?.id ? "Event updated successfully." : "Event created successfully."));
+                onSuccess?.();
+                setTimeout(() => onClose?.(), 300);
         } catch (error) {
             setStatus(error.message || "Unable to save event.");
         } finally {
@@ -579,6 +603,7 @@ function EventsPageShell({ featuredEvent, events, onCreateClick, onEditClick, va
     const upcomingEvents = events.filter((event) => event.live_stream_status === "upcoming").slice(0, 2);
     const previewEvent = featuredEvent || liveEvents[0] || upcomingEvents[0] || null;
     const isActiveView = variant === "active";
+    const canManageContent = isLoggedIn();
 
     return (
         <>
@@ -589,25 +614,29 @@ function EventsPageShell({ featuredEvent, events, onCreateClick, onEditClick, va
 
             <div className="events-content">
                 <div className="container">
-                    <div className="events-header-row">
-                        <button type="button" className="event-fab-button event-add-button" onClick={onCreateClick} aria-label="Create Event">
-                            <i className="fas fa-plus" aria-hidden="true" />
-                        </button>
-                    </div>
+                    {canManageContent && (
+                        <div className="events-header-row">
+                            <button type="button" className="event-fab-button event-add-button" onClick={onCreateClick} aria-label="Create Event">
+                                <i className="fas fa-plus" aria-hidden="true" />
+                            </button>
+                        </div>
+                    )}
 
                     <div className="events">
                         <div className="live-events-streaming">
                             <h3>{isActiveView ? "Event Highlights" : "Live Events & Streaming"}</h3>
                             {previewEvent ? (
                                 <div className="event-featured-card">
-                                    <button
-                                        type="button"
-                                        className="event-edit-button event-edit-button-live"
-                                        onClick={() => onEditClick?.(previewEvent)}
-                                        aria-label={`Edit ${previewEvent.title}`}
-                                    >
-                                        <i className="fas fa-edit" aria-hidden="true" />
-                                    </button>
+                                    {canManageContent && (
+                                        <button
+                                            type="button"
+                                            className="event-edit-button event-edit-button-live"
+                                            onClick={() => onEditClick?.(previewEvent)}
+                                            aria-label={`Edit ${previewEvent.title}`}
+                                        >
+                                            <i className="fas fa-edit" aria-hidden="true" />
+                                        </button>
+                                    )}
                                     {previewEvent.live_stream_status === "live" && previewEvent.live_stream_url && canRenderStreamEmbed(previewEvent.live_stream_url) ? (
                                         <div className="event-media-preview">
                                             <iframe
@@ -672,9 +701,11 @@ function EventsPageShell({ featuredEvent, events, onCreateClick, onEditClick, va
                                                 <p>Location: {event.location || "To be announced"}</p>
                                             </div>
                                         </Link>
-                                        <button type="button" className="event-edit-button" onClick={() => onEditClick?.(event)} aria-label={`Edit ${event.title}`}>
-                                            <i className="fas fa-edit" aria-hidden="true" />
-                                        </button>
+                                        {canManageContent && (
+                                            <button type="button" className="event-edit-button" onClick={() => onEditClick?.(event)} aria-label={`Edit ${event.title}`}>
+                                                <i className="fas fa-edit" aria-hidden="true" />
+                                            </button>
+                                        )}
                                     </div>
                                 ))
                             ) : (

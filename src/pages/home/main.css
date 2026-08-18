@@ -495,48 +495,7 @@ body {
 /* ==========================================================================
    Services Section
    ========================================================================== */
-.services {
-    position: relative;
-    padding: 5rem 0;
-    background-color: var(--surface-100);
-}
-
-.services .container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-    gap: 1.5rem;
-}
-
-.services h2,
-.services h5,
-.services span {
-    grid-column: 1 / -1;
-    text-align: center;
-}
-
-.services h2 {
-    text-align:center;
-    font-weight: 700;
-    font-size: clamp(2rem, 3vw, 2.5rem);
-    margin-bottom: 0.5rem;
-    color: var(--surface-900);
-}
-
-.services h5 {
-    font-size: 1.25rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    font-weight: 400;
-}
-
-.services span {
-    display: block;
-    color: var(--text-muted);
-    margin-bottom: 2rem;
-}
+/* Services section moved to `home.css` to avoid duplicate rules. */
 
 .service-item {
     background: var(--surface-0);

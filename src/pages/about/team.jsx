@@ -29,6 +29,20 @@ const TEAM_API_URL = (() => {
     return `${base}/aboutTeam`;
 })();
 
+const TEAM_BACKEND_ORIGIN = (() => {
+    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    if (!rawUrl) {
+        return window.location.origin;
+    }
+
+    const cleaned = rawUrl.replace(/\/\/+$/g, '');
+    try {
+        return new URL(cleaned).origin;
+    } catch {
+        return window.location.origin;
+    }
+})();
+
 const isAdminLoggedIn = () => {
     const adminAuth = window.localStorage.getItem('admin-auth');
     return adminAuth === 'true' || adminAuth === 'google' || adminAuth === 'firebase';
@@ -72,22 +86,21 @@ const getAuthorizationToken = async () => {
 
 const resolveTeamImageUrl = (value) => {
     let src = value || '';
-    if (!src) {
-        return '';
-    }
+    if (!src) return '';
 
     if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
         return src;
     }
 
+    // If server stored absolute paths like /var/www/html/..., strip the server root
+    // and prefix with the backend origin (same approach as carousel).
     if (src.includes('/var/www/html')) {
-        const relativePath = src.replace('/var/www/html', '').replace(/^\/+/, '');
-        return TEAM_API_BASE_URL ? `${TEAM_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
+        src = src.replace('/var/www/html', '');
+        return `${TEAM_BACKEND_ORIGIN}${src}`;
     }
 
     if (src.startsWith('/')) {
-        const relativePath = src.replace(/^\/+/, '');
-        return TEAM_API_BASE_URL ? `${TEAM_API_BASE_URL}/${relativePath}`.replace(/\/{2,}/g, '/') : src;
+        return `${TEAM_BACKEND_ORIGIN}${src}`;
     }
 
     return src;

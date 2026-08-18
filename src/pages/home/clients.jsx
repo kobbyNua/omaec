@@ -13,7 +13,6 @@ const CLIENT_API_URL = (() => {
   }
 
   const base = rawUrl.replace(/\/+$/g, "");
-  console.log(`Using CLIENT_API_URL: ${base}/home_clients`);
   return `${base}/home_clients`;
 })();
 
@@ -389,6 +388,8 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasData, setHasData] = useState(false);
+  const [rawJson, setRawJson] = useState(null);
+  const [rawResponseText, setRawResponseText] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -406,14 +407,88 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
           headers,
         });
 
+        const contentType = response.headers.get('content-type') || response.headers.get('Content-Type') || '';
+
+        const text = await response.text();
+        setRawResponseText(text);
+
+        const extractAllJsonSegments = (txt) => {
+          const results = [];
+          if (!txt) return results;
+          for (let i = 0; i < txt.length; i++) {
+            const ch = txt[i];
+            if (ch !== '{' && ch !== '[') continue;
+            const opener = ch;
+            const closer = opener === '{' ? '}' : ']';
+            let depth = 0;
+            for (let j = i; j < txt.length; j++) {
+              const c = txt[j];
+              if (c === opener) depth++;
+              else if (c === closer) depth--;
+              if (depth === 0) {
+                const candidate = txt.slice(i, j + 1);
+                try {
+                  const parsed = JSON.parse(candidate);
+                  results.push(parsed);
+                  i = j;
+                } catch (e) {
+                  // ignore parse errors for this slice
+                }
+                break;
+              }
+            }
+          }
+          if (results.length === 0) {
+            try { results.push(JSON.parse(txt)); } catch (e) {}
+          }
+          return results;
+        };
+
+        const candidates = extractAllJsonSegments(text);
+        // JSON candidates parsed; debug logging removed
+        const scoreCandidateForClients = (c) => {
+          // prefer arrays/objects explicitly keyed as clients
+          if (!c) return 0;
+          try {
+            const arr = extractResponseCollection(c, ['clients', 'home_clients', 'data']);
+            if (!Array.isArray(arr) || arr.length === 0) return 0;
+            const sample = arr[0] || {};
+            let score = 0;
+            if (c.clients || c.home_clients) score += 5;
+            if (sample.photo_url || sample.image_url || sample.photo) score += 3;
+            if (sample.alt) score += 2;
+            // deprioritize items that look like banners/carousel (have title/subtitle)
+            if (sample.title || sample.subtitle || sample.tagline) score -= 2;
+            return score;
+          } catch (e) {
+            return 0;
+          }
+        };
+
+        let selected = null;
+        if (candidates.length === 1) selected = candidates[0];
+        else if (candidates.length > 1) {
+          let best = null; let bestScore = -Infinity;
+          candidates.forEach((c) => {
+            const s = scoreCandidateForClients(c);
+            if (s > bestScore) { bestScore = s; best = c; }
+          });
+          selected = best || candidates[0];
+        }
+
+        // selected JSON candidate determined
+        setRawJson(selected);
+        const json = selected;
+
         if (!response.ok) {
           throw new Error("Failed to load clients");
         }
 
-        const json = await response.json();
         const items = extractResponseCollection(json, ["clients", "home_clients"]);
+        const altSource = Array.isArray(json) ? json : (json?.data || []);
+        const sourceArray = items.length ? items : (Array.isArray(altSource) ? altSource : []);
 
-        const validClients = items
+        const validClients = sourceArray
           .filter((item) => item && (item.image_url || item.photo_url || item.photo || item.alt || item.title || item.subTitle || item.subtitle))
           .map((item) => ({
             id: item.id,
@@ -442,7 +517,15 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
   }, [onDataStateChange]);
 
   if (!hasData && !loading) {
-    return null;
+    return (
+      <div className="clients-debug" style={{ padding: 12, background: '#fff6', border: '1px solid #ccc' }}>
+        <strong>No active clients detected.</strong>
+        <div style={{ marginTop: 8 }}>
+          <em>Fetched response (truncated):</em>
+          <pre style={{ maxHeight: 200, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{rawJson ? JSON.stringify(rawJson, null, 2) : (rawResponseText || 'no-json-captured')}</pre>
+        </div>
+      </div>
+    );
   }
 
   return (

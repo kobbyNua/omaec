@@ -369,6 +369,8 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
      const [loading, setLoading] = useState(true);
      const [error, setError] = useState("");
      const [hasData, setHasData] = useState(false);
+    const [rawJson, setRawJson] = useState(null);
+    const [rawResponseText, setRawResponseText] = useState('');
 
      useEffect(() => {
          const controller = new AbortController();
@@ -391,9 +393,47 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                      throw new Error('Failed to load carousel data');
                  }
 
-                const json = await response.json();
+                    const contentType = response.headers.get('content-type') || response.headers.get('Content-Type') || '';
 
-                const items = extractResponseCollection(json, ["home", "slides", "banners"]);
+                    const text = await response.text();
+                    setRawResponseText(text);
+
+                    const parsePossiblyConcatenatedJSON = (txt) => {
+                        if (!txt) return null;
+                        try { return JSON.parse(txt); } catch (e) {}
+
+                        const firstObj = txt.indexOf('{');
+                        const firstArr = txt.indexOf('[');
+                        const start = (firstObj === -1) ? firstArr : (firstArr === -1 ? firstObj : Math.min(firstObj, firstArr));
+                        if (start === -1) return null;
+                        const opener = txt[start];
+                        const closer = opener === '{' ? '}' : ']';
+                        let depth = 0;
+                        for (let i = start; i < txt.length; i++) {
+                            const ch = txt[i];
+                            if (ch === opener) depth++;
+                            else if (ch === closer) depth--;
+                            if (depth === 0) {
+                                const candidate = txt.slice(start, i + 1);
+                                try { return JSON.parse(candidate); } catch (err) {
+                                    // continue searching
+                                }
+                            }
+                        }
+
+                        // final fallback: try extract between first { and last }
+                        const lastObjEnd = txt.lastIndexOf('}');
+                        if (firstObj !== -1 && lastObjEnd > firstObj) {
+                            try { return JSON.parse(txt.slice(firstObj, lastObjEnd + 1)); } catch (err) {}
+                        }
+
+                        return null;
+                    };
+
+                    const json = parsePossiblyConcatenatedJSON(text);
+                    if (!json) console.warn('ActiveCarousel: response text not valid JSON or could not extract JSON');
+                    setRawJson(json);
+                    const items = extractResponseCollection(json, ["home", "slides", "banners"]);
 
                 if (items.length > 0) {
                     const parsedSlides = items
@@ -418,17 +458,49 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                         .filter((s) => Boolean(s.src));
 
                     if (isMounted) {
-                        setSlides(parsedSlides);
-                        const has = parsedSlides.length > 0;
-                        setHasData(has);
-                        if (typeof onDataStateChange === 'function') onDataStateChange(has);
+                        console.debug('ActiveCarousel: parsedSlides count:', parsedSlides.length, parsedSlides);
+                        // If parsing yielded no slides but the backend returned something useful,
+                        // try a fallback using the raw JSON in case the response shape differs.
+                        if (parsedSlides.length === 0) {
+                            const altSource = Array.isArray(json)
+                                ? json
+                                : (json?.data || json?.home || json?.slides || json?.banners || []);
+                            if (Array.isArray(altSource) && altSource.length > 0) {
+                                const altParsed = altSource
+                                    .map((item, index) => ({
+                                        src: item.image_url || item.image || item.src || item.url || item.picture || '',
+                                        title: item.title || item.tagline || '',
+                                        subtitle: item.subTitle || item.subtitle || '',
+                                        alt: item.title || item.subTitle || item.subtitle || `Carousel slide ${index + 1}`,
+                                    }))
+                                    .filter((s) => Boolean(s.src));
+                                if (altParsed.length > 0) {
+                                    setSlides(altParsed);
+                                    setHasData(true);
+                                    if (typeof onDataStateChange === 'function') onDataStateChange(true);
+                                } else {
+                                    setSlides([]);
+                                    setHasData(false);
+                                    if (typeof onDataStateChange === 'function') onDataStateChange(false);
+                                }
+                            } else {
+                                setSlides([]);
+                                setHasData(false);
+                                if (typeof onDataStateChange === 'function') onDataStateChange(false);
+                            }
+                        } else {
+                            setSlides(parsedSlides);
+                            const has = parsedSlides.length > 0;
+                            setHasData(has);
+                            if (typeof onDataStateChange === 'function') onDataStateChange(has);
+                        }
                     }
                 } else {
                     if (isMounted) {
                         setHasData(false);
                         if (typeof onDataStateChange === 'function') onDataStateChange(false);
                     }
-                }
+                    }
             } catch (error_) {
                 // Ignore abort errors (triggered by controller.abort() on unmount)
                 if (error_ && error_.name === 'AbortError') {
@@ -484,8 +556,16 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
         }
     };
 
-    if (!hasData) {
-        return null;
+            if (!hasData && !loading) {
+        return (
+            <div className="carousel-debug" style={{ padding: 12, background: '#fff6', border: '1px solid #ccc' }}>
+                <strong>No active carousel slides detected.</strong>
+                <div style={{ marginTop: 8 }}>
+                    <em>Fetched response (truncated):</em>
+                            <pre style={{ maxHeight: 200, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{rawJson ? JSON.stringify(rawJson, null, 2) : (rawResponseText || 'no-json-captured')}</pre>
+                </div>
+            </div>
+        );
     }
 
     return (<>
