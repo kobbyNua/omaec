@@ -1,15 +1,12 @@
 <?php
 
+/*
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
+*/
 
 require_once __DIR__.'/../libs/Conns.php';
-
-
-
-
 
 $api = info();
 
@@ -57,11 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // -----------------------------------------------------------------------------
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-
-
-
-
-
 $baseprefixes = ['/api', '/media/api'];
 
 foreach ($baseprefixes as $baseprefix) {
@@ -81,21 +73,11 @@ $resourcesId = $uriSegment[1] ?? null;
 // AUTHENTICATION & GUEST ACCESS CONTROL
 // -----------------------------------------------------------------------------
 $resourceFile = __DIR__ . '/resources/' . $resource . '.php';
-// --- TEMPORARY DEBUGGER (Remove after testing) ---
-header("Content-Type: application/json");
-echo json_encode([
-    'status' => 'PHP Router Executing',
-    'raw_request_uri' => $_SERVER['REQUEST_URI'],
-    'parsed_request_uri' => $requestUri,
-    'extracted_resource' => $resource,
-    'target_file_path' => $resourceFile,
-    'file_exists_on_linux' => file_exists($resourceFile)
-], JSON_PRETTY_PRINT);
-exit;
-// --------------------------------------------------
 
-
-$auth = require_once __DIR__ . '/resources/verify.php';
+// FIX 1: Use `require` (not require_once) so verify.php always evaluates and returns its data array
+$auth = file_exists(__DIR__ . '/resources/verify.php') 
+    ? require __DIR__ . '/resources/verify.php' 
+    : null;
 
 $GLOBALS['auth'] = is_array($auth) ? $auth : [
     'authenticated' => false,
@@ -115,10 +97,10 @@ if ($isGuest && $isUserResource) {
     exit;
 }
 
-// Guest Rule 2: Guests can only make non-ID GET requests
-if ($isGuest && ($_SERVER['REQUEST_METHOD'] !== 'GET' || !empty($resourcesId))) {
+// Guest Rule 2: Guests may read public resources via GET, but cannot write
+if ($isGuest && $_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(401);
-    echo json_encode(['status' => false, 'message' => 'Guests can only access GET requests without an id']);
+    echo json_encode(['status' => false, 'message' => 'Guests can only access GET requests on public resources']);
     exit;
 }
 
@@ -127,11 +109,12 @@ if ($isGuest && ($_SERVER['REQUEST_METHOD'] !== 'GET' || !empty($resourcesId))) 
 // -----------------------------------------------------------------------------
 if (!empty($resource) && file_exists($resourceFile)) {
     $method = $_SERVER['REQUEST_METHOD'];
-    require_once $resourceFile;
+    // FIX 2: Use `require` so the resource script always executes on dispatch
+    require $resourceFile;
 } else {
     http_response_code(404);
     echo json_encode([
-        "error" => "Resources not found ",
-        "message" => "The endpoint '/api/$resource' does not exist"
+        "error" => "Resources not found",
+        "message" => "The endpoint '$resource' does not exist"
     ]);
 }

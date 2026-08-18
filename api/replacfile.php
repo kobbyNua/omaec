@@ -142,9 +142,9 @@ if (!$isLocalHost) {
         exit;
     }
 
-    if ($isGuest && ($_SERVER['REQUEST_METHOD'] !== 'GET' || !empty($resourcesId))) {
+    if ($isGuest && $_SERVER['REQUEST_METHOD'] !== 'GET') {
         http_response_code(401);
-        echo json_encode(['status' => false, 'message' => 'Guests can only access GET requests without an id']);
+        echo json_encode(['status' => false, 'message' => 'Guests can only access GET requests on public resources']);
         exit;
     }
     
