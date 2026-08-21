@@ -28,5 +28,6 @@ jobs:
         server: ${{ secrets.FTP_SERVER_NAME }}
         username: ${{ secrets.FRONTEND_FTP_USER }}
         password: ${{ secrets.FRONTEND_FTP_PASS }}
-        local-dir: ./build/
-        server-dir: /                   # Deploys directly into public_html/
+        local-dir: ./dist/
+        server-dir: /
+        dangerous-clean-slate: true
