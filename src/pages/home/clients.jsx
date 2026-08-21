@@ -44,6 +44,8 @@ const resolveClientImageUrl = (src) => {
   return src;
 };
 
+const getClientId = (item) => item?.id ?? item?.client_id ?? item?.clientId ?? item?._id ?? item?.uuid ?? null;
+
 const createClientSvgLogo = (label, bgColor, textColor = '#ffffff') => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="240" height="120" viewBox="0 0 240 120">
@@ -293,7 +295,8 @@ function EditClientModal({ isOpen, onClose, client }) {
     }
 
     try {
-      const endpoint = client?.id ? `${CLIENT_API_URL}/${client.id}` : CLIENT_API_URL;
+      const clientId = getClientId(client);
+      const endpoint = clientId ? `${CLIENT_API_URL}/${clientId}` : CLIENT_API_URL;
       const response = await fetch(endpoint, {
         method: "PUT",
         headers,
@@ -331,7 +334,7 @@ function EditClientModal({ isOpen, onClose, client }) {
               </div>
               <div className="modal-body">
                 <form onSubmit={handleSubmit} noValidate encType="multipart/form-data">
-                  <input type="hidden" name="id" value={client?.id || ""} />
+                  <input type="hidden" name="id" value={getClientId(client) || ""} />
 
                   <div className="form-group">
                     <label htmlFor="edit-client-photo">Photo</label>
@@ -513,7 +516,7 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
         const validClients = sourceArray
           .filter((item) => item && (item.image_url || item.photo_url || item.photo || item.alt || item.title || item.subTitle || item.subtitle))
           .map((item) => ({
-            id: item.id,
+            id: getClientId(item),
             photo_url: resolveClientImageUrl(item.image_url || item.photo_url || item.photo || ""),
             alt: item.alt || item.title || item.subTitle || item.subtitle || "Client",
           }));

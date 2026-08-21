@@ -259,13 +259,21 @@
     right: 0.6rem;
     width: 36px;
     height: 36px;
-    background: #dc2626;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    background: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .event-add-button {
-    background: #0f766e;
-    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+    background: #14532d;
+    box-shadow: 0 4px 12px rgba(20, 83, 45, 0.2);
+}
+
+.event-edit-button:hover {
+    background: #1d4ed8;
+}
+
+.event-add-button:hover {
+    background: #0f3d2a;
 }
 
 .event-featured-card {

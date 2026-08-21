@@ -11,6 +11,19 @@
     text-align: center;
 }
 
+.banner .container,
+.banner .banner-container,
+.banner h2,
+.banner h5,
+.banner p,
+.banner span,
+.banner a,
+.banner li,
+.banner strong,
+.banner em {
+    color: #fff;
+}
+
 .banner .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -22,10 +35,33 @@
     font-size: 3.5rem;
     margin-bottom: 1rem;
     font-weight: 700;
+    color: #fff;
 }
 
 .banner h5 {
     font-size: 1.2rem;
     font-weight: 400;
     opacity: 0.9;
+    color: #fff;
+}
+
+@media screen and (max-width: 768px) {
+    .banner {
+        height: 45vh;
+        min-height: 260px;
+    }
+
+    .banner .container {
+        padding: 0 1rem;
+    }
+
+    .banner h2 {
+        font-size: clamp(1.5rem, 5.2vw, 2.4rem);
+        line-height: 1.2;
+    }
+
+    .banner h5 {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
 }

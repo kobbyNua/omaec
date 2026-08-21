@@ -212,12 +212,12 @@ textarea.form-control {
     position: absolute;
     top: 0;
     right: 0;
-    background: linear-gradient(180deg, #34d399, #10b981);
-    color: #042f1f;
+    background: #14532d;
+    color: #f0fdf4;
 }
 
 .about-section-edit-button {
-    background: linear-gradient(180deg, #fca5a5, #f87171);
+    background: #2563eb;
     margin-top: 0.75rem;
 }
 
@@ -225,6 +225,14 @@ textarea.form-control {
 .about-section-edit-button:hover {
     transform: translateY(-2px);
     filter: brightness(0.95);
+}
+
+.about-section-add-button:hover {
+    background: #0f3d2a;
+}
+
+.about-section-edit-button:hover {
+    background: #1d4ed8;
 }
 
 .team-member .about-section-edit-button {

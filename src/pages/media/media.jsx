@@ -152,7 +152,7 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         thumbnail_url: '',
         alt_text: '',
     });
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [errors, setErrors] = useState({});
     const [status, setStatus] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -172,7 +172,7 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
             thumbnail_url: initialValues?.thumbnail_url || initialValues?.thumbnail || fileUrl,
             alt_text: initialValues?.alt_text || initialTitle,
         });
-        setSelectedFile(null);
+        setSelectedFiles([]);
         setErrors({});
         setStatus('');
         setProcessing(false);
@@ -187,10 +187,10 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
             nextErrors.media_type = 'Media type is required.';
         }
         if (formData.media_type === 'video') {
-            if (!selectedFile && !formData.file_url?.trim()) {
+            if (!selectedFiles.length && !formData.file_url?.trim()) {
                 nextErrors.file_url = 'Video URL is required.';
             }
-        } else if (!selectedFile && !initialValues?.file_url && !formData.file_url?.trim()) {
+        } else if (!selectedFiles.length && !initialValues?.file_url && !formData.file_url?.trim()) {
             nextErrors.file_url = 'Image is required.';
         }
         return nextErrors;
@@ -223,11 +223,13 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
     };
 
     const handleFileChange = (event) => {
-        const file = event.target.files?.[0] || null;
-        setSelectedFile(file);
+        const files = Array.from(event.target.files || []);
+        setSelectedFiles(files);
+        const firstFile = files[0] || null;
         setFormData((previous) => ({
             ...previous,
             thumbnail_url: previous.file_url || '',
+            file_url: firstFile ? '' : previous.file_url,
         }));
         setErrors((previous) => ({ ...previous, file_url: '' }));
     };
@@ -262,8 +264,13 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         if (mediaType) {
             payload.append('media_type', mediaType);
         }
-        if (selectedFile) {
-            payload.append('file_url', selectedFile);
+        if (selectedFiles.length > 0) {
+            if (selectedFiles.length === 1) {
+                payload.append('file_url', selectedFiles[0]);
+            } else {
+                const uploadedImageList = selectedFiles.map((file) => file.name || file.url || String(file));
+                payload.append('file_url', JSON.stringify(uploadedImageList));
+            }
         } else if (fileValue) {
             payload.append('file_url', fileValue);
         }
@@ -338,7 +345,7 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
                                 {formData.media_type === 'video' ? (
                                     <input id="media-file-url" name="file_url" type="text" className="form-control" value={formData.file_url} onChange={handleFieldChange} placeholder="https://example.com/video.mp4" />
                                 ) : (
-                                    <input id="media-file-url" name="file_url" type="file" className="form-control" accept="image/*" onChange={handleFileChange} />
+                                    <input id="media-file-url" name="file_url" type="file" className="form-control" accept="image/*" multiple onChange={handleFileChange} />
                                 )}
                                 {errors.file_url && <p className="form-error">{errors.file_url}</p>}
                             </div>

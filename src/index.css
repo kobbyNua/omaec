@@ -12,8 +12,12 @@
     --text-muted: #6b7280;
     --bg: #ffffff;
     --bg-soft: #f8fafc;
-    --link: #dc2626;
-    --link-hover: #991b1b;
+    --link: #2563eb;
+    --link-hover: #1d4ed8;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --success: #14532d;
+    --success-hover: #0f3d2a;
 }
 
 html {
@@ -191,7 +195,7 @@ small {
 }
 
 .social a:hover {
-    background-color: #dc2626;
+    background-color: #2563eb;
     color: #fff;
     transform: translateY(-3px);
 }

@@ -104,7 +104,6 @@
 .portfolio-edit-button,
 .portfolio-submit-button {
     border: none;
-    background: #0f766e;
     color: #fff;
     cursor: pointer;
 }
@@ -117,7 +116,8 @@
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
-    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+    background: #14532d;
+    box-shadow: 0 4px 12px rgba(20, 83, 45, 0.2);
 }
 
 .portfolio-edit-button {
@@ -132,8 +132,16 @@
     align-items: center;
     justify-content: center;
     font-size: 0.95rem;
-    background: #dc2626;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    background: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.portfolio-add-button:hover {
+    background: #0f3d2a;
+}
+
+.portfolio-edit-button:hover {
+    background: #1d4ed8;
 }
 
 .portfolio-submit-button {

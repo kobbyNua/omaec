@@ -3,13 +3,13 @@
    ========================================================================== */
 :root {
     /* Color Palette */
-    --primary: #dc2626;
-    --primary-hover: #b91c1c;
-    --primary-soft: rgba(220, 38, 38, 0.15);
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-soft: rgba(37, 99, 235, 0.15);
     
-    --success: #10b981;
-    --success-hover: #059669;
-    --success-soft: rgba(16, 185, 129, 0.18);
+    --success: #14532d;
+    --success-hover: #0f3d2a;
+    --success-soft: rgba(20, 83, 45, 0.18);
 
     --accent: #ef4444;
     --accent-soft: rgba(239, 68, 68, 0.1);
@@ -171,8 +171,8 @@ body {
 
 .carousel-add-button {
     right: 1.5rem;
-    background: linear-gradient(180deg, #34d399, var(--success));
-    color: #042f1f;
+    background: #14532d;
+    color: #f0fdf4;
     font-size: 2rem;
     line-height: 1;
     box-shadow: var(--shadow-lg);
@@ -180,7 +180,7 @@ body {
 
 .carousel-edit-button {
     left: 1.5rem;
-    background: linear-gradient(180deg, #f87171, var(--primary));
+    background: #2563eb;
     color: var(--text-inverse);
     font-size: 0.95rem;
     box-shadow: var(--shadow-lg);

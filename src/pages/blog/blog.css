@@ -149,10 +149,16 @@
 
 .blog-card-edit-button {
     border: none;
-    background: transparent;
-    color: #dc2626;
+    background: #2563eb;
+    color: #fff;
     cursor: pointer;
     font-size: 1rem;
+    border-radius: 999px;
+    padding: 0.45rem 0.7rem;
+}
+
+.blog-card-edit-button:hover {
+    background: #1d4ed8;
 }
 
 .blog-post-author {
@@ -247,17 +253,17 @@
     height: 48px;
     border-radius: 50%;
     border: 2px solid #fff;
-    background: #dc2626;
-    color: #fff;
+    background: #14532d;
+    color: #f0fdf4;
     cursor: pointer;
-    box-shadow: 0 10px 24px rgba(220, 38, 38, 0.3);
+    box-shadow: 0 10px 24px rgba(20, 83, 45, 0.28);
     position: relative;
     z-index: 10;
 }
 
 .about-section-add-button:hover {
     transform: translateY(-1px);
-    background: #991b1b;
+    background: #0f3d2a;
 }
 
 .close-button {
@@ -437,7 +443,45 @@
     background: #fff;
 }
 
-@media  screen and (max-width: 768px) {
+@media screen and (max-width: 1024px) {
+    .blog-layout,
+    .blog-posts {
+        grid-template-columns: 1fr;
+    }
+
+    .blog-post-grid,
+    .blog-active-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .blog-sidebar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .blog-carousel {
+        height: 420px;
+    }
+
+    .blog-content .container {
+        padding: 0 1.25rem;
+    }
+}
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+    .blog-carousel {
+        height: 360px;
+    }
+
+    .blog-post-grid,
+    .blog-active-grid,
+    .blog-sidebar {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 768px) {
     .blog-carousel {
         height: 300px;
     }
@@ -453,7 +497,26 @@
     .blog-carousel-caption p {
         font-size: 0.9rem;
     }
-    
+
+    .blog-post-grid,
+    .blog-active-grid,
+    .blog-sidebar {
+        grid-template-columns: 1fr;
+    }
+
+    .blog-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .blog-form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .blog-content .container {
+        padding: 0 1rem;
+    }
 }
 
 .blog-posts {

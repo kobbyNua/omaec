@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/media': {
-        target: 'http://10.86.231.181',
+        target: 'http://10.86.231.124',
         changeOrigin: true,
         secure: false,
       },
@@ -19,7 +19,7 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/media': {
-        target: 'http://10.86.231.181',
+        target: 'http://10.86.231.124',
         changeOrigin: true,
         secure: false,
       },
