@@ -15,30 +15,9 @@ require __DIR__.'/./cred.php';
               // echo 'connection successful';
            }
            catch(PDOException $e){
-                     // Build a safe context for logging (do not include plaintext password)
-                     $safeCred = $cred;
-                     if (isset($safeCred['PASWD'])) {
-                          $safeCred['PASWD'] = '*****';
-                     }
-
-                     $context = [
-                          'time' => date('c'),
-                          'host' => $safeCred['HOST'] ?? null,
-                          'port' => $safeCred['PORT'] ?? null,
-                          'db' => $safeCred['DB'] ?? null,
-                          'user' => $safeCred['USER'] ?? null,
-                          'error' => $e->getMessage(),
-                          'note' => 'Check DB host (127.0.0.1 vs localhost), port, socket path, and MySQL user grants'
-                     ];
-
-                     $logMsg = 'DB_CONNECTION_ERROR: ' . json_encode($context);
-                     // System error log
-                     error_log($logMsg);
-                     // Project-level error log (created earlier by index.php when debug enabled)
-                     @error_log($logMsg . PHP_EOL, 3, __DIR__ . '/../php-error.log');
-
-                     // Throw a generic exception for upstream handling (do not leak DB details to clients)
-                     throw new Exception(json_encode(['error' => 'database connection failed']));
+                 error_log('connection failed because '.$e->getMessage());
+                 throw new Exception(json_encode(['error'=>'databas connection failed']));
+                 //error_log('connection failed because '.$e->getMessage());
            }
       }
 
