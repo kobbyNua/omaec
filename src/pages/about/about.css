@@ -160,8 +160,8 @@
 
 .form-control:focus {
     outline: none;
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.12);
+    border-color: #e2e8f0;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
 }
 
 textarea.form-control {
@@ -177,7 +177,7 @@ textarea.form-control {
 
 .form-status {
     margin-top: 0.75rem;
-    color: #0d6efd;
+    color: #dc2626;
     font-size: 0.95rem;
 }
 
@@ -217,7 +217,7 @@ textarea.form-control {
 }
 
 .about-section-edit-button {
-    background: linear-gradient(180deg, #60a5fa, #2563eb);
+    background: linear-gradient(180deg, #fca5a5, #f87171);
     margin-top: 0.75rem;
 }
 
@@ -236,7 +236,7 @@ button[type="submit"] {
     width: 100%;
     border: none;
     border-radius: 8px;
-    background: #0d6efd;
+    background: #dc2626;
     color: #fff;
     padding: 0.8rem 1rem;
     font-weight: 600;

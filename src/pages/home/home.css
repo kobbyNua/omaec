@@ -73,13 +73,13 @@ p, span, li, a {
 }
 
 a {
-    color: #0066cc;
+    color: #dc2626;
     text-decoration: none;
 }
 
 a:hover,
 a:focus-visible {
-    color: #003d80;
+    color: #991b1b;
 }
 
 small {
@@ -219,13 +219,13 @@ small {
     padding: 0;
     border-radius: 50%;
     border: none;
-    background: linear-gradient(180deg, #60a5fa, #2563eb);
+    background: linear-gradient(180deg, #f87171, #dc2626);
     color: #fff;
     display: grid;
     place-items: center;
     font-size: 0.95rem;
     cursor: pointer;
-    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.16);
+    box-shadow: 0 12px 28px rgba(220, 38, 38, 0.16);
     transition: transform 0.2s ease, filter 0.12s ease;
     z-index: 2;
 }
@@ -428,13 +428,13 @@ small {
 }
 
 .btn-primary {
-    background: #0d6efd;
-    border-color: #0d6efd;
+    background: #dc2626;
+    border-color: #dc2626;
 }
 
 .btn-primary:hover {
-    background: #0b5ed7;
-    border-color: #0a58ca;
+    background: #b91c1c;
+    border-color: #991b1b;
 }
 
 .btn-success {
@@ -502,7 +502,7 @@ service-item p {
     border: none;
     padding: 0.6rem 1rem;
     border-radius: 0.375rem;
-    background: #0d6efd;
+    background: #dc2626;
     color: #fff;
 }
 
@@ -528,7 +528,7 @@ service-item p {
 }
 
 .service-edit-btn:hover {
-    background: #0b5ed7;
+    background: #b91c1c;
 }
 
 .carousel-modal-grid {
@@ -578,8 +578,8 @@ service-item p {
 .carousel-form input:focus,
 .carousel-form textarea:focus,
 .carousel-form select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    border-color: #e2e8f0;
+    box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.15);
     outline: none;
 }
 
@@ -592,7 +592,7 @@ service-item p {
     padding: 0.95rem 1.25rem;
     border-radius: 14px;
     border: none;
-    background: #2563eb;
+    background: #dc2626;
     color: #fff;
     font-size: 1rem;
     font-weight: 700;
@@ -601,7 +601,7 @@ service-item p {
 }
 
 .carousel-submit-btn:hover {
-    background: #1d4ed8;
+    background: #b91c1c;
     transform: translateY(-1px);
 }
 
@@ -710,25 +710,25 @@ service-item p {
 .service-item:hover {
     transform: translateY(-10px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-    border-color: #3498db;
+    border-color: #e2e8f0;
 }
 
 .service-item:hover .service-icon {
-    background-color: #3498db;
+    background-color: #dc2626;
     color: #fff;
-    box-shadow: 0 0 0 5px rgba(52, 152, 219, 0.2);
+    box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.2);
 }
 
 .service-icon {
     width: 100px;
     height: 100px;
-    background-color: rgba(52, 152, 219, 0.1);
+    background-color: rgba(248, 113, 113, 0.12);
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 0 auto 1.5rem;
-    color: #3498db;
+    color: #f87171;
     font-size: 2.5rem;
     transition: all 0.3s ease;
 }
@@ -770,11 +770,11 @@ service-item p {
         border-radius: 50%;
         display: grid;
         place-items: center;
-        background-color: rgba(52, 152, 219, 0.12);
-        color: #3498db;
+        background-color: rgba(220, 38, 38, 0.12);
+        color: #dc2626;
         font-size: 2.7rem;
         flex-shrink: 0;
-        box-shadow: 0 0 0 6px rgba(52, 152, 219, 0.05);
+        box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.05);
     }
 
     .service-item h3,
@@ -877,27 +877,27 @@ service-item p {
 .service-item:hover {
     transform: translateY(-8px);
     box-shadow: 0 18px 45px rgba(0, 0, 0, 0.1);
-    border-color: #3498db;
+    border-color: #e2e8f0;
 }
 
 .service-icon {
     width: 80px;
     height: 80px;
-    background-color: rgba(52, 152, 219, 0.1);
+    background-color: rgba(248, 113, 113, 0.12);
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 0 auto 1.5rem;
-    color: #3498db;
+    color: #f87171;
     font-size: 2.25rem;
     transition: all 0.3s ease;
 }
 
 .service-item:hover .service-icon {
-    background-color: #3498db;
+    background-color: #dc2626;
     color: #fff;
-    box-shadow: 0 0 0 6px rgba(52, 152, 219, 0.15);
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.15);
 }
 
 .service-item h3 {
@@ -962,7 +962,7 @@ service-item p {
 .about-section ul li::before {
     content: '-';
     margin-right: 10px;
-    color: #3498db;
+    color: #dc2626;
 }
 
 .about-caption-imge-box {

@@ -390,8 +390,10 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                    headers,
                });
                  if (!response.ok) {
-                     throw new Error('Failed to load carousel data');
-                 }
+                    const bodyText = await response.text().catch(() => '');
+                    const errorMessage = bodyText ? `${response.status} ${response.statusText}: ${bodyText.slice(0, 200)}` : `${response.status} ${response.statusText}`;
+                    throw new Error(errorMessage);
+                }
 
                     const contentType = response.headers.get('content-type') || response.headers.get('Content-Type') || '';
 
@@ -437,7 +439,7 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
 
                 if (items.length > 0) {
                     const parsedSlides = items
-                        .filter((it) => Number(it.is_active) === 1 || it.is_active === true)
+                        .filter((it) => Number(it.is_active) === 1 || it.is_active === true || it.is_active === undefined)
                         .map((item, index) => {
                             let src = item.image_url || item.image || item.src || item.url || item.picture || '';
                             if (src && !src.startsWith('http')) {
@@ -508,7 +510,8 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                 }
 
                 if (isMounted) {
-                    setError(error_.message || 'Unable to load slides');
+                    console.warn('ActiveCarousel failed to load backend data:', error_?.message || error_);
+                    setError('');
                     setHasData(false);
                     if (typeof onDataStateChange === 'function') onDataStateChange(false);
                 }

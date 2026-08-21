@@ -120,7 +120,7 @@ function App() {
         <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
              <div className="container">
                   <div className="navbar-logo">
-                           <a href="/"><img src="./assets/while_logo.png" alt="My Website" /></a>
+                           <a href="/"><img src={isScrolled ? '/black_logo.png' : '/while_logo.png'} alt="My Website" /></a>
                   </div>
 
                   {/* Hamburger Menu Icon for Mobile */}

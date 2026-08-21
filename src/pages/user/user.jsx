@@ -51,7 +51,7 @@ function UserPage() {
               <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.5rem' }}>User Profile</h2>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', paddingBottom: '2rem', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-                <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#0284c7', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 700 }}>
+                <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#dc2626', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 700 }}>
                   {email[0]?.toUpperCase()}
                 </div>
                 <div>
@@ -91,7 +91,7 @@ function UserPage() {
                   <input id="confirmPass" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '8px', outline: 'none', fontSize: '0.95rem' }} />
                 </div>
 
-                <button type="submit" style={{ padding: '0.8rem 1.5rem', background: '#0284c7', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start', boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)', transition: 'background-color 0.2s ease' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#0369a1'} onMouseLeave={(e) => e.target.style.backgroundColor = '#0284c7'}>
+                <button type="submit" style={{ padding: '0.8rem 1.5rem', background: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start', boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)', transition: 'background-color 0.2s ease' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#991b1b'} onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}>
                   Update Password
                 </button>
               </form>

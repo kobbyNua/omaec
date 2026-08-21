@@ -12,8 +12,8 @@
     --text-muted: #6b7280;
     --bg: #ffffff;
     --bg-soft: #f8fafc;
-    --link: #0066cc;
-    --link-hover: #003d80;
+    --link: #dc2626;
+    --link-hover: #991b1b;
 }
 
 html {
@@ -163,7 +163,7 @@ small {
 }
 
 .footer a:hover {
-    color: #3498db;
+    color: #dc2626;
 }
 
 .footer-links ul li a::before {
@@ -171,7 +171,7 @@ small {
     font-family: 'Font Awesome 5 Free';
     font-weight: 900;
     margin-right: 10px;
-    color: #3498db;
+    color: #dc2626;
 }
 
 .social ul {
@@ -191,7 +191,7 @@ small {
 }
 
 .social a:hover {
-    background-color: #3498db;
+    background-color: #dc2626;
     color: #fff;
     transform: translateY(-3px);
 }

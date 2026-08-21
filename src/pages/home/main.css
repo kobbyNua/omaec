@@ -3,16 +3,16 @@
    ========================================================================== */
 :root {
     /* Color Palette */
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --primary-soft: rgba(59, 130, 246, 0.15);
+    --primary: #dc2626;
+    --primary-hover: #b91c1c;
+    --primary-soft: rgba(220, 38, 38, 0.15);
     
     --success: #10b981;
     --success-hover: #059669;
     --success-soft: rgba(16, 185, 129, 0.18);
 
-    --accent: #3498db;
-    --accent-soft: rgba(52, 152, 219, 0.1);
+    --accent: #ef4444;
+    --accent-soft: rgba(239, 68, 68, 0.1);
 
     --danger: #dc3545;
     --danger-soft: rgba(220, 53, 69, 0.25);
@@ -180,7 +180,7 @@ body {
 
 .carousel-edit-button {
     left: 1.5rem;
-    background: linear-gradient(180deg, #60a5fa, var(--primary));
+    background: linear-gradient(180deg, #f87171, var(--primary));
     color: var(--text-inverse);
     font-size: 0.95rem;
     box-shadow: var(--shadow-lg);

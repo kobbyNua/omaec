@@ -314,8 +314,8 @@ function AdminPage() {
                     background: 'none',
                     fontSize: '0.95rem',
                     fontWeight: 600,
-                    color: usersTab === 'list' ? '#0284c7' : '#64748b',
-                    borderBottom: usersTab === 'list' ? '3px solid #0284c7' : '3px solid transparent',
+                    color: usersTab === 'list' ? '#f87171' : '#64748b',
+                    borderBottom: usersTab === 'list' ? '3px solid #f87171' : '3px solid transparent',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     outline: 'none'
@@ -343,8 +343,8 @@ function AdminPage() {
                     background: 'none',
                     fontSize: '0.95rem',
                     fontWeight: 600,
-                    color: usersTab === 'create' ? '#0284c7' : '#64748b',
-                    borderBottom: usersTab === 'create' ? '3px solid #0284c7' : '3px solid transparent',
+                    color: usersTab === 'create' ? '#f87171' : '#64748b',
+                    borderBottom: usersTab === 'create' ? '3px solid #f87171' : '3px solid transparent',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     outline: 'none'
@@ -384,8 +384,8 @@ function AdminPage() {
                         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                       }}
                       onFocus={(e) => {
-                        e.target.style.borderColor = '#0284c7';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(2, 132, 199, 0.15)';
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(148, 163, 184, 0.15)';
                       }}
                       onBlur={(e) => {
                         e.target.style.borderColor = '#cbd5e1';
@@ -438,8 +438,8 @@ function AdminPage() {
                                     width: '38px',
                                     height: '38px',
                                     borderRadius: '50%',
-                                    backgroundColor: item.status === 'Active' ? '#e0f2fe' : '#f1f5f9',
-                                    color: item.status === 'Active' ? '#0369a1' : '#475569',
+                                    backgroundColor: item.status === 'Active' ? '#fee2e2' : '#f1f5f9',
+                                    color: item.status === 'Active' ? '#991b1b' : '#475569',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -604,8 +604,8 @@ function AdminPage() {
                           transition: 'all 0.2s ease',
                         }}
                         onFocus={(e) => {
-                          e.target.style.borderColor = '#0284c7';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(2, 132, 199, 0.15)';
+                          e.target.style.borderColor = '#dc2626';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.15)';
                         }}
                         onBlur={(e) => {
                           e.target.style.borderColor = '#cbd5e1';
@@ -634,8 +634,8 @@ function AdminPage() {
                           transition: 'all 0.2s ease',
                         }}
                         onFocus={(e) => {
-                          e.target.style.borderColor = '#0284c7';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(2, 132, 199, 0.15)';
+                          e.target.style.borderColor = '#dc2626';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.15)';
                         }}
                         onBlur={(e) => {
                           e.target.style.borderColor = '#cbd5e1';
@@ -649,7 +649,7 @@ function AdminPage() {
                       style={{
                         padding: '0.8rem 1.75rem',
                         marginTop: '0.5rem',
-                        background: '#0284c7',
+                        background: '#dc2626',
                         color: '#ffffff',
                         border: 'none',
                         borderRadius: '8px',
@@ -657,16 +657,16 @@ function AdminPage() {
                         fontWeight: 600,
                         cursor: 'pointer',
                         alignSelf: 'flex-start',
-                        boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.2)',
                         transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0369a1';
-                        e.target.style.boxShadow = '0 6px 16px rgba(3, 105, 161, 0.3)';
+                        e.target.style.backgroundColor = '#991b1b';
+                        e.target.style.boxShadow = '0 6px 16px rgba(153, 27, 27, 0.3)';
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#0284c7';
-                        e.target.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.2)';
+                        e.target.style.backgroundColor = '#dc2626';
+                        e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.2)';
                       }}
                     >
                       Save User

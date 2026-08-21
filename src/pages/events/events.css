@@ -50,7 +50,7 @@
 
 .event-list h4 {
     font-size: 1.8rem;
-    color: #3498db;
+    color: #dc2626;
     margin-bottom: 1rem;
 }
 
@@ -259,8 +259,8 @@
     right: 0.6rem;
     width: 36px;
     height: 36px;
-    background: #0d6efd;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 .event-add-button {
@@ -509,15 +509,15 @@
     padding: 0.9rem 1rem;
     border: none;
     border-radius: 8px;
-    background: #2563eb;
+    background: #dc2626;
     color: #fff;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.2);
 }
 
 .event-submit-button:hover {
-    background: #1d4ed8;
+    background: #991b1b;
 }
 
 .event-submit-button:disabled {

@@ -44,6 +44,32 @@ const resolveClientImageUrl = (src) => {
   return src;
 };
 
+const createClientSvgLogo = (label, bgColor, textColor = '#ffffff') => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="240" height="120" viewBox="0 0 240 120">
+      <rect width="240" height="120" fill="${bgColor}"/>
+      <text x="50%" y="58%" text-anchor="middle" font-size="22" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="${textColor}" dominant-baseline="middle">${label}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+const defaultClientLogos = [
+  { name: 'Google', src: createClientSvgLogo('Google', '#f5f5f5', '#1f1f1f') },
+  { name: 'Microsoft', src: createClientSvgLogo('Microsoft', '#e8f0fe', '#0f172a') },
+  { name: 'Apple', src: createClientSvgLogo('Apple', '#111111', '#ffffff') },
+  { name: 'Amazon', src: createClientSvgLogo('Amazon', '#f3f1e8', '#111111') },
+  { name: 'Meta', src: createClientSvgLogo('Meta', '#e9f6ff', '#0f172a') },
+  { name: 'Netflix', src: createClientSvgLogo('Netflix', '#111111', '#e50914') },
+  { name: 'Tesla', src: createClientSvgLogo('Tesla', '#fef2f2', '#b91c1c') },
+  { name: 'Coca-Cola', src: createClientSvgLogo('Coca-Cola', '#f7d7d7', '#9b1c1c') },
+  { name: 'Nike', src: createClientSvgLogo('Nike', '#f3f4f6', '#111111') },
+  { name: 'Samsung', src: createClientSvgLogo('Samsung', '#fef2f2', '#7f1d1d') },
+  { name: 'Adobe', src: createClientSvgLogo('Adobe', '#fbe9e9', '#d14d4d') },
+  { name: 'IBM', src: createClientSvgLogo('IBM', '#fef2f2', '#b91c1c') },
+];
+
 const isAdminLoggedIn = () => {
   const adminAuth = window.localStorage.getItem("admin-auth");
   return adminAuth === "true" || adminAuth === "google" || adminAuth === "firebase";
@@ -355,18 +381,9 @@ function DefaultClients({ onCreateClick }) {
       <div className="container">
         <h2>Our Clients</h2>
         <div className="client-logos">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" alt="Microsoft" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" alt="Meta" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg" alt="Coca-Cola" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" alt="Nike" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" alt="Samsung" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Adobe_Corporate_Logo.png" alt="Adobe" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" alt="IBM" />
+          {defaultClientLogos.map((client) => (
+            <img key={client.name} src={client.src} alt={client.name} />
+          ))}
         </div>
       </div>
       {isLoggedIn() && (
@@ -406,6 +423,11 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
           signal: controller.signal,
           headers,
         });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "");
+          throw new Error(errorText ? `${response.status} ${response.statusText}: ${errorText.slice(0, 200)}` : `${response.status} ${response.statusText}`);
+        }
 
         const contentType = response.headers.get('content-type') || response.headers.get('Content-Type') || '';
 
@@ -504,7 +526,8 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
         if (error_?.name === "AbortError") {
           return;
         }
-        setError(error_.message || "Unable to load clients");
+        console.warn('ActiveClients failed to load backend data:', error_?.message || error_);
+        setError("");
         setHasData(false);
         onDataStateChange?.(false);
       } finally {
