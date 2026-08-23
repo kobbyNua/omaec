@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
+import { getBackendBase } from '../../utils/backend.js';
 import { auth } from '../../Authentication/auth';
 import Banner from '../banner/banner';
 import './portfolio.css';
 import Modal from './portfolioModal.jsx';
 
 const PORTFOLIO_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         return '/portfolio';
     }

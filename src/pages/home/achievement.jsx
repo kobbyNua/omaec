@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { getBackendBase } from "../../utils/backend.js";
 import { createPortal } from "react-dom";
 import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
 import { extractResponseCollection } from "../../utils/apiResponse.js";
 
 const ACHIEVEMENT_API_URL = (() => {
-  const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+  const rawUrl = getBackendBase();
   if (!rawUrl) {
     console.warn('VITE_APP_URL is not defined. Falling back to /home_achievements');
     return "/home_achievements";

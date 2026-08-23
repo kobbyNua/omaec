@@ -5,9 +5,10 @@ import './services.css';
 import Modal from './servicesModal';
 import { auth } from '../../Authentication/auth.jsx';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
+import { getBackendBase } from '../../utils/backend.js';
 
 const SERVICE_API_BASE_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /services');
         return '';
@@ -22,7 +23,7 @@ const SERVICE_API_BASE_URL = (() => {
 })();
 
 const SERVICE_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         return '/services';
     }
@@ -32,7 +33,7 @@ const SERVICE_API_URL = (() => {
 })();
 
 const SERVICE_BACKEND_ORIGIN = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         return window.location.origin;
     }

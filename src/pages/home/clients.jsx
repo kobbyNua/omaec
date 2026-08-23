@@ -5,10 +5,11 @@ import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
 import { extractResponseCollection } from "../../utils/apiResponse.js";
 
+import { getBackendBase } from "../../utils/backend.js";
+
 const CLIENT_API_URL = (() => {
-  const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+  const rawUrl = getBackendBase();
   if (!rawUrl) {
-    console.warn("VITE_APP_URL is not defined. Falling back to /home_clients");
     return "/home_clients";
   }
 
@@ -384,9 +385,22 @@ function DefaultClients({ onCreateClick }) {
       <div className="container">
         <h2>Our Clients</h2>
         <div className="client-logos">
-          {defaultClientLogos.map((client) => (
-            <img key={client.name} src={client.src} alt={client.name} />
-          ))}
+          {defaultClientLogos.map((client) => {
+            const localName = client.name.toLowerCase().replace(/\s+/g, '-');
+            const localSrc = `/clients/${encodeURIComponent(localName)}.png`;
+            return (
+              <img
+                key={client.name}
+                src={localSrc}
+                alt={client.name}
+                onError={(e) => {
+                  // If a local/logo image isn't available (404), fall back to the SVG data URI
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = client.src;
+                }}
+              />
+            );
+          })}
         </div>
       </div>
       {isLoggedIn() && (

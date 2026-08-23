@@ -3,9 +3,10 @@ import { createPortal } from 'react-dom';
 import Modal from './aboutModal';
 import { auth } from '../../Authentication/auth.jsx';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
+import { getBackendBase } from '../../utils/backend.js';
 
 const TEAM_API_BASE_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /aboutTeam');
         return '';
@@ -20,7 +21,7 @@ const TEAM_API_BASE_URL = (() => {
 })();
 
 const TEAM_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /aboutTeam');
         return '/aboutTeam';
@@ -30,7 +31,7 @@ const TEAM_API_URL = (() => {
 })();
 
 const TEAM_BACKEND_ORIGIN = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         return window.location.origin;
     }

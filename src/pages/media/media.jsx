@@ -3,10 +3,12 @@ import Banner from '../banner/banner';
 import './media.css';
 import { createPortal } from 'react-dom';
 import Modal from './mediaModal';
+import { Link } from 'react-router-dom';
 import { auth } from '../../Authentication/auth.jsx';
+import { getBackendBase } from '../../utils/backend.js';
 
 const MEDIA_API_BASE_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /media');
         return '';
@@ -21,27 +23,20 @@ const MEDIA_API_BASE_URL = (() => {
 })();
 
 const MEDIA_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
-        console.warn('VITE_APP_URL is not defined. Falling back to /media');
         return '/media';
     }
     const base = rawUrl.replace(/\/+$/g, '');
     return `${base}/media`;
 })();
 
-const MEDIA_BACKEND_ORIGIN = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
-    if (!rawUrl) {
-        return window.location.origin;
-    }
+import { getBackendOriginFrom } from '../../utils/backend.js';
 
-    const cleaned = rawUrl.replace(/\/\/+$/g, '');
-    try {
-        return new URL(cleaned).origin;
-    } catch {
-        return window.location.origin;
-    }
+const MEDIA_BACKEND_ORIGIN = (() => {
+    const rawUrl = getBackendBase();
+    if (!rawUrl) return window.location.origin;
+    return getBackendOriginFrom(rawUrl);
 })();
 
 const isAdminLoggedIn = () => {
@@ -149,7 +144,7 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         title: '',
         media_type: 'image',
         file_url: '',
-        thumbnail_url: '',
+        thumbnail_url: '', // will hold a slug (thumbnail identifier)
         alt_text: '',
     });
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -169,7 +164,7 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
             title: initialTitle,
             media_type: mediaType,
             file_url: fileUrl,
-            thumbnail_url: initialValues?.thumbnail_url || initialValues?.thumbnail || fileUrl,
+            thumbnail_url: initialValues?.thumbnail_url || initialValues?.thumbnail || slugify(initialTitle || ''),
             alt_text: initialValues?.alt_text || initialTitle,
         });
         setSelectedFiles([]);
@@ -211,12 +206,13 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
                 ...previous,
                 title: value,
                 alt_text: value,
+                thumbnail_url: slugify(value),
             }));
         } else {
+            // do not derive thumbnail from file_url; thumbnail is slug of title
             setFormData((previous) => ({
                 ...previous,
                 [name]: value,
-                ...(name === 'file_url' ? { thumbnail_url: value } : {}),
             }));
         }
         setErrors((previous) => ({ ...previous, [name]: '' }));
@@ -226,9 +222,10 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         const files = Array.from(event.target.files || []);
         setSelectedFiles(files);
         const firstFile = files[0] || null;
+        // Always use title slug for thumbnail; keep existing title-based slug if available
         setFormData((previous) => ({
             ...previous,
-            thumbnail_url: previous.file_url || '',
+            thumbnail_url: slugify(previous.title || ''),
             file_url: firstFile ? '' : previous.file_url,
         }));
         setErrors((previous) => ({ ...previous, file_url: '' }));
@@ -245,6 +242,36 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         setProcessing(true);
         setStatus(initialValues?.id ? 'Saving media...' : 'Creating media...');
 
+        // Check duplicates: fetch existing media and prevent create if title or thumbnail exists
+        try {
+            const checkResp = await fetch(MEDIA_API_URL, { method: 'GET' });
+            if (checkResp.ok) {
+                const existing = await checkResp.json().catch(() => []);
+                const arr = Array.isArray(existing) ? existing : existing?.data || [];
+                const titleLower = (formData.title || '').trim().toLowerCase();
+                const thumbSlug = slugify(formData.title || '');
+                const duplicate = arr.find((it) => {
+                    if (!it) return false;
+                    const sameId = initialValues?.id && (String(it.id) === String(initialValues.id));
+                    if (sameId) return false;
+                    const itTitle = (it.title || '').trim().toLowerCase();
+                    const itThumb = (it.thumbnail_url || it.thumbnail || it.file_url || '').trim();
+                    if (itTitle && titleLower && itTitle === titleLower) return true;
+                    if (itThumb && thumbSlug && (itThumb === thumbSlug || slugify(itThumb) === thumbSlug || slugify(it.title || '') === thumbSlug)) return true;
+                    return false;
+                });
+
+                if (duplicate) {
+                    setProcessing(false);
+                    setStatus('A media item with the same title or thumbnail already exists.');
+                    return;
+                }
+            }
+        } catch (e) {
+            // ignore duplicate check failures and proceed
+            console.warn('Duplicate check failed:', e);
+        }
+
         const authToken = await getAuthorizationToken();
         const headers = {};
         if (authToken) {
@@ -255,7 +282,7 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         const title = formData.title?.trim();
         const mediaType = formData.media_type === 'video' ? 'video' : 'image';
         const fileValue = formData.file_url?.trim();
-        const thumbnailValue = fileValue;
+        const thumbnailValue = formData.thumbnail_url?.trim() || (fileValue ? slugify(fileValue) : '');
         const altText = formData.alt_text?.trim() || title;
 
         if (title) {
@@ -266,12 +293,16 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         }
         if (selectedFiles.length > 0) {
             if (selectedFiles.length === 1) {
+                // single file: keep existing behavior (file blob)
                 payload.append('file_url', selectedFiles[0]);
             } else {
-                const uploadedImageList = selectedFiles.map((file) => file.name || file.url || String(file));
-                payload.append('file_url', JSON.stringify(uploadedImageList));
+                // multiple files: append each file as `file_url[]` so server receives multiple file parts
+                selectedFiles.forEach((file) => {
+                    payload.append('file_url[]', file);
+                });
             }
         } else if (fileValue) {
+            // when a URL is provided instead of file upload
             payload.append('file_url', fileValue);
         }
         if (thumbnailValue) {
@@ -536,6 +567,16 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
 
     const videos = useMemo(() => mediaItems.filter((item) => item.media_type === 'video' && isValidMediaUrl(item.file_url)), [mediaItems]);
     const images = useMemo(() => mediaItems.filter((item) => item.media_type !== 'video' && isValidMediaUrl(item.file_url)), [mediaItems]);
+    // Deduplicate images by title (or file_url) so only one photo displays per same name
+    const uniqueImages = useMemo(() => {
+        const seen = new Set();
+        return images.filter((img) => {
+            const key = slugify(img.title || img.file_url || img.thumbnail_url || img.id || '');
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [images]);
     // Use the last item as the most recently posted video and show up to four previous videos as thumbnails
     const recentVideo = videos.length > 0 ? videos[videos.length - 1] : null;
     const thumbnailVideos = videos.length > 1 ? videos.slice(Math.max(0, videos.length - 5), videos.length - 1) : [];
@@ -615,16 +656,21 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
                 <div className="our-photo-works">
                     <h3>Our Photo Works</h3>
                     <div className="photo-gallery">
-                        {loading ? null : images.length > 0 ? images.map((image) => (
-                            <div className="photo-item" key={image.id || image.title}>
-                                <img src={resolveMediaUrl(image.file_url)} alt={image.alt_text || image.title || 'Media'} />
-                                {isLoggedIn() && (
-                                    <button type="button" className="service-card-edit-button photo-edit-button" onClick={() => onEditClick(image)} aria-label={`Edit ${image.title}`}>
-                                        <i className="fas fa-edit" aria-hidden="true" />
-                                    </button>
-                                )}
-                            </div>
-                        )) : <p className="media-empty-state">No images available</p>}
+                        {loading ? null : images.length > 0 ? uniqueImages.map((image) => {
+                            const slug = slugify(image.title || image.thumbnail_url || image.file_url || '');
+                            return (
+                                <div className="photo-item" key={image.id || image.title}>
+                                    <Link to={`/media-photo?thumbnail=${encodeURIComponent(slug)}`} aria-label={`View photos for ${slug}`}>
+                                        <img src={resolveMediaUrl(image.file_url)} alt={image.alt_text || image.title || 'Media'} />
+                                    </Link>
+                                    {isLoggedIn() && (
+                                        <button type="button" className="service-card-edit-button photo-edit-button" onClick={() => onEditClick(image)} aria-label={`Edit ${image.title}`}>
+                                            <i className="fas fa-edit" aria-hidden="true" />
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        }) : <p className="media-empty-state">No images available</p>}
                     </div>
                 </div>
 

@@ -4,9 +4,10 @@ import './blog.css';
 import Modal from './blogModal';
 import { auth } from '../../Authentication/auth.jsx';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
+import { getBackendBase } from '../../utils/backend.js';
 
 const BLOG_API_BASE_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /blog');
         return '';
@@ -21,7 +22,7 @@ const BLOG_API_BASE_URL = (() => {
 })();
 
 const BLOG_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /blog');
         return '/blog';
@@ -31,7 +32,7 @@ const BLOG_API_URL = (() => {
 })();
 
 const BLOG_BACKEND_ORIGIN = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         return window.location.origin;
     }
@@ -45,7 +46,7 @@ const BLOG_BACKEND_ORIGIN = (() => {
 })();
 
 const CATEGORY_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn('VITE_APP_URL is not defined. Falling back to /categories');
         return '/categories';

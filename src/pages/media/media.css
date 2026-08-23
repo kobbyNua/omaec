@@ -225,7 +225,72 @@
     padding: 0 0.25rem;
 }
 
+/* Grid used by media-photo page to match gallery appearance */
+.photo-grid {
+    display: grid;
+    /* default: single column (phone portrait) */
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0 0.25rem;
+}
+
+/* Phone landscape: 2x2 */
+@media (orientation: landscape) and (max-width: 767px) {
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablet portrait: 2x2 (widths between 600px and 1023px in portrait) */
+@media (min-width: 600px) and (max-width: 1023px) and (orientation: portrait) {
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablet landscape and larger: 4x4 */
+@media (min-width: 768px) and (orientation: landscape) {
+    .photo-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .photo-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
 .photo-item {
+    overflow: hidden;
+    border-radius: 0;
+    box-shadow: none;
+    height: 300px;
+    cursor: pointer;
+    padding: 0;
+
+/* Spacing for media-photo page so it has clear space below the Banner like other pages */
+.media-photo-page {
+    padding: 4rem 0; /* top and bottom spacing */
+}
+
+.media-photo-page .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+    .media-photo-page { padding: 2rem 0; }
+    .media-photo-page .container { padding: 0 1rem; }
+}
+    width: calc(100% - 0.5rem);
+    margin: 0 0.25rem 0.75rem 0.25rem;
+}
+
+/* Card used inside media-photo page */
+.photo-card {
     overflow: hidden;
     border-radius: 0;
     box-shadow: none;
@@ -234,9 +299,12 @@
     padding: 0;
     width: calc(100% - 0.5rem);
     margin: 0 0.25rem 0.75rem 0.25rem;
+    display: flex;
+    flex-direction: column;
 }
 
-.photo-item img {
+.photo-item img,
+.photo-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;

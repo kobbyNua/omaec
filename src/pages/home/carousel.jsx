@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Modal from "./homeModal"; 
 import { auth } from "../../Authentication/auth";import { extractResponseCollection } from "../../utils/apiResponse.js";
+import { getBackendBase, getBackendOriginFrom } from "../../utils/backend.js";
 //add carousel modal
 function AddCarouselModal(){
      
@@ -30,13 +31,13 @@ const isLoggedIn = () => {
 };
 
 const BACKEND_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || '';
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
-        console.warn('VITE_APP_URL is not defined. Active carousel backend calls may fail.');
+        console.warn('Using relative backend base (development).');
         return '';
     }
 
-    const cleaned = rawUrl.replace(/\/+$/, '');
+    const cleaned = rawUrl.replace(/\/+$/g, '');
     const malformedMatch = cleaned.match(/^(https?:\/\/[^/:]+):(\d+):\d+(\/.*)?$/);
     if (malformedMatch) {
         const host = malformedMatch[1];
@@ -44,17 +45,11 @@ const BACKEND_API_URL = (() => {
         const path = malformedMatch[3] || '';
         return `${host}:${port}${path}`;
     }
-    
+
     return cleaned;
 })();
 
-const BACKEND_API_ORIGIN = (() => {
-    try {
-        return new URL(BACKEND_API_URL).origin;
-    } catch {
-        return window.location.origin;
-    }
-})();
+const BACKEND_API_ORIGIN = getBackendOriginFrom(BACKEND_API_URL);
 
 const getAuthorizationToken = async () => {
     const currentUser = auth.currentUser;
@@ -560,16 +555,22 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
     };
 
             if (!hasData && !loading) {
-        return (
-            <div className="carousel-debug" style={{ padding: 12, background: '#fff6', border: '1px solid #ccc' }}>
-                <strong>No active carousel slides detected.</strong>
-                <div style={{ marginTop: 8 }}>
-                    <em>Fetched response (truncated):</em>
-                            <pre style={{ maxHeight: 200, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{rawJson ? JSON.stringify(rawJson, null, 2) : (rawResponseText || 'no-json-captured')}</pre>
-                </div>
-            </div>
-        );
-    }
+                // For regular users, silently fall back to the DefaultCarousel rendered by the parent.
+                // Show the debug information only to admins to avoid alarming normal visitors.
+                if (isAdminLoggedIn()) {
+                    return (
+                        <div className="carousel-debug" style={{ padding: 12, background: '#fff6', border: '1px solid #ccc' }}>
+                            <strong>No active carousel slides detected.</strong>
+                            <div style={{ marginTop: 8 }}>
+                                <em>Fetched response (truncated):</em>
+                                <pre style={{ maxHeight: 200, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{rawJson ? JSON.stringify(rawJson, null, 2) : (rawResponseText || 'no-json-captured')}</pre>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return null;
+            }
 
     return (<>
            

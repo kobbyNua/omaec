@@ -4,12 +4,11 @@ import { useNavigate } from "react-router-dom";
 import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
 import { extractResponseCollection } from "../../utils/apiResponse.js";
+import { getBackendBase } from "../../utils/backend.js";
 
 const SERVICE_API_URL = (() => {
-  const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
-  // If VITE_APP_URL isn't provided fall back to a relative endpoint.
+  const rawUrl = getBackendBase();
   if (!rawUrl) {
-    console.warn('VITE_APP_URL is not defined. Falling back to /home_services');
     return "/home_services";
   }
   const base = rawUrl.replace(/\/+$/g, "");

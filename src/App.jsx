@@ -6,6 +6,7 @@ import Home from './pages/home/home';
 import About from './pages/about/about';
 import Events  from './pages/events/events';
 import Media from './pages/media/media';
+import MediaPhotoPage from './pages/media/media-photo';
 import Services  from './pages/services/services'; 
 import Portfolio from './pages/portfolio/portfolio.jsx';
 import Contact from './pages/contact/contact.jsx';
@@ -17,13 +18,26 @@ import ResetPassword from './pages/admin/reset-password';
 import './App.css';
 import { useState ,useEffect, useRef } from 'react';
 import './styles.css';
-import { BrowserRouter as BrowseRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as BrowseRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { subscribeToAuthChanges, logoutUser } from './Authentication/auth';
 
+const pageTitleMap = {
+  '/': 'Home',
+  '/about': 'About',
+  '/services': 'Services',
+  '/media': 'Media',
+  '/events': 'Events',
+  '/portfolio': 'Portfolio',
+  '/blog': 'Blog',
+  '/contact': 'Contact',
+  '/login': 'Login',
+  '/reset-password': 'Reset Password',
+  '/admin': 'Admin',
+  '/user': 'User',
+};
 
-
-function App() {
-//const Navbar = () => {
+function AppContent() {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
@@ -99,6 +113,25 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const match = Object.entries(pageTitleMap).find(([path]) => {
+      if (path === location.pathname) return true;
+      if (path !== '/events' && path !== '/admin' && path !== '/user' && path !== '/login' && path !== '/reset-password' && path !== '/portfolio' && path !== '/blog' && path !== '/contact' && path !== '/about' && path !== '/services' && path !== '/media') {
+        return false;
+      }
+      return false;
+    });
+
+    const pageName = pageTitleMap[location.pathname] ||
+      (location.pathname.startsWith('/events') ? 'Events' :
+      location.pathname.startsWith('/portfolio') ? 'Portfolio' :
+      location.pathname.startsWith('/blog') ? 'Blog' :
+      location.pathname.startsWith('/contact') ? 'Contact' :
+      'Home');
+
+    document.title = `Omron Media | ${pageName}`;
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     window.localStorage.removeItem('admin-auth');
     window.localStorage.removeItem('user-auth');
@@ -114,9 +147,6 @@ function App() {
 
 
   return <>
-
-  
-  <BrowseRouter>
         <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
              <div className="container">
                   <div className="navbar-logo">
@@ -231,6 +261,7 @@ function App() {
                <Route path="/about" element={<About />}/>
                <Route path="/services" element={<Services />}/>
                <Route path="/media" element={<Media />}/>
+               <Route path="/media-photo" element={<MediaPhotoPage />} />
                <Route path="/events" element={<Events />}/>
                <Route path="/events/:slug" element={<Events />}/>
                <Route path="/portfolio" element={<Portfolio />}/>
@@ -241,7 +272,6 @@ function App() {
                <Route path="/admin" element={<AdminPage />} />
                <Route path="/user" element={<UserPage />} />
         </Routes>
-  </BrowseRouter>
   {/* footer */}
 
     <div className="footer">
@@ -380,5 +410,11 @@ function App() {
     </>
   )*/
 }
-
+function App() {
+  return (
+    <BrowseRouter>
+      <AppContent />
+    </BrowseRouter>
+  );
+}
 export default App

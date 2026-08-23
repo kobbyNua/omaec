@@ -4,8 +4,9 @@ import "./events.css";
 import Banner from "../banner/banner";
 import Modal from "./eventModal";
 import { auth } from "../../Authentication/auth.jsx";import { extractResponseCollection } from '../../utils/apiResponse.js';
+import { getBackendBase } from '../../utils/backend.js';
 const EVENT_API_BASE_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn("VITE_APP_URL is not defined. Falling back to /events");
         return "";
@@ -20,7 +21,7 @@ const EVENT_API_BASE_URL = (() => {
 })();
 
 const EVENT_API_URL = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         console.warn("VITE_APP_URL is not defined. Falling back to /events");
         return "/events";
@@ -30,7 +31,7 @@ const EVENT_API_URL = (() => {
 })();
 
 const EVENT_BACKEND_ORIGIN = (() => {
-    const rawUrl = import.meta.env.VITE_APP_URL?.trim() || "";
+    const rawUrl = getBackendBase();
     if (!rawUrl) {
         return window.location.origin;
     }
