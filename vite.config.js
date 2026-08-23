@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
   // NOTE: rely on Vite's default SPA handling; avoid custom plugin that returned HTML for module requests
 
   return {
+    base: './',
     plugins: [react()],
     server: {
       host: '0.0.0.0',
