@@ -87,6 +87,11 @@ $GLOBALS['auth'] = is_array($auth) ? $auth : [
     'email' => null
 ];
 
+// TEMPORARY: Localhost/IP-limited auth bypass for testing.
+// Use ?bypass_auth=1 from localhost or a trusted dev IP to act as an authenticated user.
+// This block will be removed after tests are complete.
+// (auth bypass removed)
+
 $isGuest = !empty($GLOBALS['auth']['guest']) || empty($GLOBALS['auth']['authenticated']);
 $isUserResource = in_array($resource, ['user', 'users'], true);
 
