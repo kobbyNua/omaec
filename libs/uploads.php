@@ -61,17 +61,13 @@ function uploadMediaFile(?array $file, ?string $uploadDir = null, ?string $type 
 
         $resolvedType = $type;
         if ($resolvedType === null) {
-            $firstType = detectMediaTypeFromFile($files[0]);
-            if ($firstType === null) {
-                return ['success' => false, 'path' => null, 'message' => 'Unsupported file format in the uploaded group'];
-            }
-            $resolvedType = $firstType;
-        }
-
-        foreach ($files as $singleFile) {
-            $singleType = detectMediaTypeFromFile($singleFile);
-            if ($singleType !== null && $singleType !== $resolvedType) {
-                return ['success' => false, 'path' => null, 'message' => 'Multiple uploads must be all images or all videos'];
+            $resolvedType = null;
+        } else {
+            foreach ($files as $singleFile) {
+                $singleType = detectMediaTypeFromFile($singleFile);
+                if ($singleType !== null && $singleType !== $resolvedType) {
+                    return ['success' => false, 'path' => null, 'message' => 'Uploaded files must match the requested media type'];
+                }
             }
         }
 

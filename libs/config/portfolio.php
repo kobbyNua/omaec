@@ -22,6 +22,20 @@
 
         INDEX idx_PORTFOLIO_SORT(is_active,DISPLAY_ORDER)
      );
+
+     CREATE TABLE portfolio_media(
+        id INT(3) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        portfolio_id INT(3) NOT NULL,
+        media_type ENUM('image','video') NOT NULL,
+        media_url VARCHAR(255) NOT NULL,
+        display_order INT DEFAULT 0,
+        is_active TINYINT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+        INDEX idx_PORTFOLIO_MEDIA_SORT(portfolio_id,is_active,DISPLAY_ORDER),
+        FOREIGN KEY (portfolio_id) REFERENCES portfolio(id) ON DELETE CASCADE
+     );
    */
    class Portfolio{
         private $db;
@@ -69,129 +83,212 @@
             echo json_encode($payload);
         }
 
-        private function normalizePortfolioMediaValue($value) {
+        private function normalizeMediaList($value): array{
             if ($value === null || $value === '') {
-                return null;
+                return [];
             }
 
             if (is_string($value)) {
                 $trimmed = trim($value);
                 if ($trimmed === '') {
-                    return null;
+                    return [];
                 }
 
                 $decoded = json_decode($trimmed, true);
                 if (is_array($decoded)) {
-                    return array_map(function ($item) {
-                        $item = trim((string)$item);
-                        return $item === '' ? null : $this->toPublicPath($item);
-                    }, $decoded);
+                    return $this->normalizeMediaList($decoded);
                 }
 
-                return $this->toPublicPath($trimmed);
+                if (strpos($trimmed, ',') !== false) {
+                    return $this->normalizeMediaList(array_map('trim', explode(',', $trimmed)));
+                }
+
+                $publicPath = $this->toPublicPath($trimmed);
+                return $publicPath !== null && $publicPath !== '' ? [$publicPath] : [];
             }
 
             if (is_array($value)) {
-                $normalized = [];
-                foreach ($value as $item) {
-                    if (is_string($item)) {
-                        $converted = $this->toPublicPath(trim($item));
-                        if ($converted !== null && $converted !== '') {
-                            $normalized[] = $converted;
+                $items = [];
+                foreach ($value as $entry) {
+                    if (is_string($entry)) {
+                        $normalized = $this->normalizeMediaList($entry);
+                        foreach ($normalized as $url) {
+                            $items[] = $url;
+                        }
+                    } elseif (is_array($entry) && isset($entry['media_url'])) {
+                        $normalized = $this->normalizeMediaList($entry['media_url']);
+                        foreach ($normalized as $url) {
+                            $items[] = $url;
                         }
                     }
                 }
 
-                return $normalized;
+                $items = array_values(array_unique(array_filter($items, fn($item) => $item !== null && $item !== '')));
+                return $items;
             }
 
-            return $this->toPublicPath((string)$value);
+            return [];
         }
 
-        private function resolvePortfolioUploadFile(array $data): ?array{
-            $fileKeys = ['cover_image_url', 'portfolio_files', 'gallery_files', 'media_files', 'files', 'project_files', 'image_url', 'video_url', 'file_url'];
+        private function flattenUploadedFiles($value): array{
+            if (!is_array($value)) {
+                return [];
+            }
 
-            foreach ($fileKeys as $key) {
-                if (isset($_FILES[$key]) && is_array($_FILES[$key]) && (!empty($_FILES[$key]['name']) || (isset($_FILES[$key]['name']) && is_array($_FILES[$key]['name']) && !empty(array_filter($_FILES[$key]['name']))))) {
-                    return $_FILES[$key];
+            if (isset($value['name']) && !is_array($value['name'])) {
+                if (trim((string)$value['name']) === '') {
+                    return [];
+                }
+                return [$value];
+            }
+
+            $files = [];
+            $names = $value['name'] ?? [];
+            $count = is_array($names) ? count($names) : 0;
+
+            for ($i = 0; $i < $count; $i++) {
+                $name = $names[$i] ?? '';
+                if ($name === '') {
+                    continue;
+                }
+
+                $files[] = [
+                    'name' => $name,
+                    'type' => $value['type'][$i] ?? '',
+                    'tmp_name' => $value['tmp_name'][$i] ?? '',
+                    'error' => $value['error'][$i] ?? UPLOAD_ERR_NO_FILE,
+                    'size' => $value['size'][$i] ?? 0,
+                ];
+            }
+
+            return $files;
+        }
+
+        private function extractPortfolioRow(array $data): array{
+            $allowed = ['project_name', 'slug', 'client_name', 'project_summary', 'project_details', 'completion_date', 'project_url', 'cover_image_url', 'display_order', 'is_active'];
+            $row = [];
+
+            foreach ($allowed as $field) {
+                if (array_key_exists($field, $data)) {
+                    $row[$field] = $data[$field];
                 }
             }
 
+            if (isset($row['cover_image_url']) && is_array($row['cover_image_url']) && !isset($row['cover_image_url']['tmp_name'])) {
+                $normalized = $this->normalizeMediaList($row['cover_image_url']);
+                $row['cover_image_url'] = !empty($normalized) ? $normalized[0] : null;
+            }
+
+            if (array_key_exists('cover_image_url', $row) && !empty($row['cover_image_url']) && is_string($row['cover_image_url'])) {
+                $row['cover_image_url'] = $this->toPublicPath($row['cover_image_url']);
+            }
+
+            return $row;
+        }
+
+        private function resolvePortfolioMediaUrls(array $data): array{
+            $mediaUrls = [];
+            $fileKeys = ['media_url', 'cover_image_url', 'portfolio_files', 'gallery_files', 'media_files', 'files', 'project_files', 'file_url'];
+
             foreach ($fileKeys as $key) {
-                if (isset($data[$key]) && is_array($data[$key]) && (isset($data[$key]['tmp_name']) || (isset($data[$key]['name']) && is_array($data[$key]['name']) && !empty(array_filter($data[$key]['name']))))) {
-                    return $data[$key];
+                if (isset($_FILES[$key])) {
+                    foreach ($this->flattenUploadedFiles($_FILES[$key]) as $file) {
+                        $uploadResult = uploadMediaFile($file, null, null);
+                        if (!$uploadResult['success']) {
+                            throw new RuntimeException($uploadResult['message']);
+                        }
+                        $mediaUrls[] = $this->toPublicPath((string)$uploadResult['path']);
+                    }
                 }
+
+                if (!array_key_exists($key, $data)) {
+                    continue;
+                }
+
+                $value = $data[$key];
+                if (is_array($value) && isset($value['tmp_name']) && is_string($value['tmp_name'])) {
+                    $uploadResult = uploadMediaFile($value, null, null);
+                    if (!$uploadResult['success']) {
+                        throw new RuntimeException($uploadResult['message']);
+                    }
+                    $mediaUrls[] = $this->toPublicPath((string)$uploadResult['path']);
+                    continue;
+                }
+
+                if (is_array($value) && (!isset($value['tmp_name']) || is_array($value['tmp_name']))) {
+                    foreach ($this->flattenUploadedFiles($value) as $file) {
+                        $uploadResult = uploadMediaFile($file, null, null);
+                        if (!$uploadResult['success']) {
+                            throw new RuntimeException($uploadResult['message']);
+                        }
+                        $mediaUrls[] = $this->toPublicPath((string)$uploadResult['path']);
+                    }
+                    $mediaUrls = array_merge($mediaUrls, $this->normalizeMediaList($value));
+                    continue;
+                }
+
+                $mediaUrls = array_merge($mediaUrls, $this->normalizeMediaList($value));
             }
 
-            return null;
+            $mediaUrls = array_values(array_unique(array_filter($mediaUrls, fn($item) => $item !== null && $item !== '')));
+            return $mediaUrls;
         }
 
-        private function detectPortfolioUploadType(array $file): ?string{
-            $mimeType = strtolower((string)($file['type'] ?? ''));
-            if (stripos($mimeType, 'video/') === 0) {
-                return 'video';
-            }
-            if (stripos($mimeType, 'image/') === 0) {
-                return 'image';
+        private function fetchPortfolioMedia(int $portfolioId): array{
+            $rows = $this->db->query('SELECT media_url FROM portfolio_media WHERE portfolio_id = :portfolio_id AND is_active = 1 ORDER BY display_order ASC, id ASC')
+                ->bind(['portfolio_id' => $portfolioId])
+                ->findAll();
+
+            $media = [];
+            foreach ($rows as $row) {
+                $url = trim((string)($row['media_url'] ?? ''));
+                if ($url === '') {
+                    continue;
+                }
+                $media[] = $this->toPublicPath($url);
             }
 
-            $fileName = (string)($file['name'] ?? '');
-            $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-            if (in_array($extension, ['mp4', 'mov', 'avi', 'mkv', 'webm'], true)) {
-                return 'video';
-            }
-            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
-                return 'image';
-            }
-
-            return null;
+            return array_values(array_unique(array_filter($media, fn($item) => $item !== null && $item !== '')));
         }
 
-        private function handlePortfolioUploads(array &$data): bool{
-            $uploadFile = $this->resolvePortfolioUploadFile($data);
+        private function syncPortfolioMedia(int $portfolioId, array $mediaUrls): void{
+            $this->db->query('DELETE FROM portfolio_media WHERE portfolio_id = :portfolio_id')->bind(['portfolio_id' => $portfolioId]);
 
-            if ($uploadFile === null) {
-                return false;
+            foreach ($mediaUrls as $index => $mediaUrl) {
+                $publicUrl = $this->toPublicPath((string)$mediaUrl);
+                if ($publicUrl === null || $publicUrl === '') {
+                    continue;
+                }
+
+                $this->db->insert('portfolio_media', [
+                    'portfolio_id' => $portfolioId,
+                    'media_url' => $publicUrl,
+                    'display_order' => $index,
+                    'is_active' => 1,
+                ]);
             }
-
-            $uploadType = $this->detectPortfolioUploadType(is_array($uploadFile) && isset($uploadFile['name']) && !is_array($uploadFile['name']) ? $uploadFile : ['name' => '', 'type' => '']);
-            $uploadResult = uploadMediaFile($uploadFile, null, $uploadType);
-
-            if (!$uploadResult['success']) {
-                $this->sendJson(['status' => false, 'message' => $uploadResult['message']]);
-                return true;
-            }
-
-            $uploadedPaths = $uploadResult['path'];
-            if (is_array($uploadedPaths)) {
-                $publicPaths = array_values(array_filter(array_map(function ($path) {
-                    return $this->toPublicPath((string)$path);
-                }, $uploadedPaths)));
-                $data['cover_image_url'] = json_encode($publicPaths, JSON_UNESCAPED_SLASHES);
-                return true;
-            }
-
-            $data['cover_image_url'] = $this->toPublicPath((string)$uploadedPaths);
-            return true;
         }
 
         private function formatPortfolioItem(array $item): array{
             if (!empty($item['cover_image_url'])) {
-                $decodedValue = json_decode((string)$item['cover_image_url'], true);
-                if (is_array($decodedValue)) {
-                    $item['cover_image_url'] = array_values(array_filter(array_map(function ($value) {
-                        return $this->toPublicPath((string)$value);
-                    }, $decodedValue)));
-                } else {
-                    $item['cover_image_url'] = $this->toPublicPath((string)$item['cover_image_url']);
-                }
+                $item['cover_image_url'] = $this->toPublicPath((string)$item['cover_image_url']);
             }
+
+            $item['media_url'] = [];
+            if (!empty($item['id'])) {
+                $item['media_url'] = $this->fetchPortfolioMedia((int)$item['id']);
+            }
+
+            if (empty($item['media_url']) && !empty($item['cover_image_url'])) {
+                $item['media_url'] = [$item['cover_image_url']];
+            }
+
             return $item;
         }
 
         function viewPortfolio(){
                 $this->ensureDb();
-                $fetch_all = $this->db->execute('SELECT * FROM  portfolio');
+                $fetch_all = $this->db->execute('SELECT * FROM portfolio ORDER BY display_order ASC, id ASC');
                 $items = $fetch_all->fetchAll(PDO::FETCH_ASSOC);
                 $items = array_map([$this, 'formatPortfolioItem'], $items);
                 echo json_encode(['status'=>true,'data'=>$items]);
@@ -213,15 +310,9 @@
                 throw new InvalidArgumentException("Data must be an array");
             }
 
+            $pdo = DB::getConnection();
+
             try {
-                if (isset($data['cover_image_url']) && is_array($data['cover_image_url']) && !isset($data['cover_image_url']['tmp_name'])) {
-                    $data['cover_image_url'] = json_encode(array_values(array_filter(array_map(function ($value) {
-                        return is_string($value) ? $this->toPublicPath(trim($value)) : null;
-                    }, $data['cover_image_url']))), JSON_UNESCAPED_SLASHES);
-                }
-
-                $this->handlePortfolioUploads($data);
-
                 $requiredFields = ['project_name', 'slug', 'client_name', 'project_summary', 'project_details', 'completion_date', 'project_url'];
                 foreach ($requiredFields as $field) {
                     if (!array_key_exists($field, $data) || trim((string) $data[$field]) === '') {
@@ -230,18 +321,38 @@
                     }
                 }
 
-                foreach ($data as $key => $value) {
-                    if (is_array($value) && !isset($value['tmp_name'], $value['name'], $value['error']) && !empty($value)) {
-                        $data[$key] = json_encode($this->normalizePortfolioMediaValue($value), JSON_UNESCAPED_SLASHES);
-                    }
+                $portfolioData = $this->extractPortfolioRow($data);
+                $mediaUrls = [];
+                try {
+                    $mediaUrls = $this->resolvePortfolioMediaUrls($data);
+                } catch (\Throwable $e) {
+                    $this->sendJson(['status' => false, 'message' => $e->getMessage()]);
+                    return;
                 }
 
-                $inserted = $this->db->insert('portfolio', $data);
-                $results = ($inserted)
-                    ? ['status' => true, 'message' => 'portfolio details added successfully']
-                    : ['status' => false, 'message' => 'Failed to add portfolio'];
-                $this->sendJson($results);
+                if (!empty($mediaUrls)) {
+                    $portfolioData['cover_image_url'] = $mediaUrls[0];
+                }
+
+                $pdo->beginTransaction();
+                $inserted = $this->db->insert('portfolio', $portfolioData);
+                if (!$inserted) {
+                    $pdo->rollBack();
+                    $this->sendJson(['status' => false, 'message' => 'Failed to add portfolio']);
+                    return;
+                }
+
+                $portfolioId = (int) $this->db->lastID();
+                if (!empty($mediaUrls)) {
+                    $this->syncPortfolioMedia($portfolioId, $mediaUrls);
+                }
+
+                $pdo->commit();
+                $this->sendJson(['status' => true, 'message' => 'portfolio details added successfully']);
             } catch (\Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
                 $this->sendJson(['status' => false, 'message' => 'invalid data']);
                 error_log(json_encode(['status' => false, 'message' => $e->getMessage()]));
             }
@@ -249,32 +360,58 @@
 
         function editPortfolio(array $data,string $id,array $where)
         {
-               
                  if(!is_array($data)){
                       throw new InvalidArgumentException('invalid data');
                  }
 
                  $this->ensureDb();
+                 $pdo = DB::getConnection();
 
                  try{
-                        if (isset($data['cover_image_url']) && is_array($data['cover_image_url']) && !isset($data['cover_image_url']['tmp_name'])) {
-                            $data['cover_image_url'] = json_encode(array_values(array_filter(array_map(function ($value) {
-                                return is_string($value) ? $this->toPublicPath(trim($value)) : null;
-                            }, $data['cover_image_url']))), JSON_UNESCAPED_SLASHES);
+                        $portfolioId = (int)($where['id'] ?? 0);
+                        $portfolioData = $this->extractPortfolioRow($data);
+                        $mediaUrls = [];
+                        $hasMediaInput = array_key_exists('media_url', $data)
+                            || array_key_exists('cover_image_url', $data)
+                            || array_key_exists('portfolio_files', $data)
+                            || array_key_exists('gallery_files', $data)
+                            || array_key_exists('media_files', $data)
+                            || array_key_exists('files', $data)
+                            || array_key_exists('project_files', $data)
+                            || array_key_exists('file_url', $data)
+                            || isset($_FILES['media_url'])
+                            || isset($_FILES['cover_image_url'])
+                            || isset($_FILES['portfolio_files'])
+                            || isset($_FILES['gallery_files'])
+                            || isset($_FILES['media_files'])
+                            || isset($_FILES['files'])
+                            || isset($_FILES['project_files'])
+                            || isset($_FILES['file_url']);
+
+                        if ($hasMediaInput) {
+                            $mediaUrls = $this->resolvePortfolioMediaUrls($data);
                         }
 
-                        $this->handlePortfolioUploads($data);
-
-                        foreach ($data as $key => $value) {
-                            if (is_array($value) && !isset($value['tmp_name'], $value['name'], $value['error']) && !empty($value)) {
-                                $data[$key] = json_encode($this->normalizePortfolioMediaValue($value), JSON_UNESCAPED_SLASHES);
+                        $pdo->beginTransaction();
+                        if (!empty($portfolioData)) {
+                            $update = $this->db->update('portfolio', $portfolioData, $id, $where);
+                            if (!$update) {
+                                $pdo->rollBack();
+                                echo json_encode(['status' => false, 'message' => 'Failed to update portfolio']);
+                                return;
                             }
                         }
 
-                        $update= $this->db->update('portfolio',$data,$id,$where);
-                        $results = ($update) ? ['status'=>true,'message'=>"portfolio details edited successfully"] : ['status'=>false,'message'=>"Failed to add banner"];
-                        echo json_encode($results);
-                 }catch(Exception $e){
+                        if ($hasMediaInput) {
+                            $this->syncPortfolioMedia($portfolioId, $mediaUrls);
+                        }
+
+                        $pdo->commit();
+                        echo json_encode(['status'=>true,'message'=>"portfolio details edited successfully"]);
+                 }catch(\Throwable $e){
+                                     if ($pdo->inTransaction()) {
+                                        $pdo->rollBack();
+                                     }
                                      echo json_encode(['status'=>false,'message'=>"invalid data"]);
                      error_log(json_encode(['status'=>false,'message'=>$e->getMessage()]));
                  }   
