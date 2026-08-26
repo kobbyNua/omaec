@@ -29,14 +29,30 @@ function UserPage() {
 
   const handleChangePassword = (e) => {
     e.preventDefault();
+
+    if (!currentPassword.trim()) {
+      setMessage('Current password is required.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setMessage('New password must be at least 6 characters long.');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setMessage('New passwords do not match.');
       return;
     }
+
     setMessage('Password changed successfully.');
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+
+    setTimeout(() => {
+      navigate('/user', { replace: true });
+    }, 800);
   };
 
   return (

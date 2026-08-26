@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import './reset-password.css';
 
 function ResetPassword() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const token = searchParams.get('token');
 
     const [password, setPassword] = useState('');
@@ -58,6 +59,9 @@ function ResetPassword() {
                 setMessage('Password reset successful.');
                 setPassword('');
                 setConfirmPassword('');
+                setTimeout(() => {
+                    navigate('/login', { replace: true });
+                }, 800);
             }
         } catch (err) {
             setError(err.message || 'Network error');

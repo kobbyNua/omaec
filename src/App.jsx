@@ -7,6 +7,7 @@ import About from './pages/about/about';
 import Events  from './pages/events/events';
 import Media from './pages/media/media';
 import MediaPhotoPage from './pages/media/media-photo';
+import MediaVideoPage from './pages/media/media-video';
 import Services  from './pages/services/services'; 
 import Portfolio from './pages/portfolio/portfolio.jsx';
 import Contact from './pages/contact/contact.jsx';
@@ -262,6 +263,7 @@ function AppContent() {
                <Route path="/services" element={<Services />}/>
                <Route path="/media" element={<Media />}/>
                <Route path="/media-photo" element={<MediaPhotoPage />} />
+               <Route path="/media-video" element={<MediaVideoPage />} />
                <Route path="/events" element={<Events />}/>
                <Route path="/events/:slug" element={<Events />}/>
                <Route path="/portfolio" element={<Portfolio />}/>

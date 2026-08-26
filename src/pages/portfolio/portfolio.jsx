@@ -195,6 +195,87 @@ const getProjectImageValue = (item) => {
     return DEFAULT_PORTFOLIO_IMAGE;
 };
 
+const normalizeMediaSource = (value) => {
+    if (!value) {
+        return [];
+    }
+
+    if (Array.isArray(value)) {
+        return value.flatMap((entry) => normalizeMediaSource(entry));
+    }
+
+    if (typeof value === 'object') {
+        const url = value.url || value.path || value.src || value.file || value.file_url || value.image_url || value.video_url || value.media_url || value.link || value.href || value.location || value.name;
+        const type = value.media_type || value.type || value.kind || (String(value.file || value.url || value.src || '').match(/\.(mp4|webm|ogg|mov)$/i) ? 'video' : 'image');
+
+        if (url) {
+            return [{
+                id: value.id || value.name || url,
+                title: value.title || value.name || value.project_name || 'Project media',
+                media_type: String(type || 'image').toLowerCase() === 'video' ? 'video' : 'image',
+                file_url: resolveProjectImage(url),
+                thumbnail_url: resolveProjectImage(url),
+                alt_text: value.alt_text || value.alt || value.title || value.name || 'Project media',
+            }];
+        }
+
+        return [];
+    }
+
+    const trimmed = String(value).trim();
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') {
+        return [];
+    }
+
+    return [{
+        id: trimmed,
+        title: 'Project media',
+        media_type: /\.(mp4|webm|ogg|mov)$/i.test(trimmed) ? 'video' : 'image',
+        file_url: resolveProjectImage(trimmed),
+        thumbnail_url: resolveProjectImage(trimmed),
+        alt_text: 'Project media',
+    }];
+};
+
+const normalizeProjectGallery = (project) => {
+    if (!project) {
+        return [];
+    }
+
+    const rawItems = [
+        project.media_files,
+        project.media,
+        project.gallery,
+        project.images,
+        project.videos,
+        project.project_media,
+        project.items,
+        project.cover_image_url,
+        project.cover_image,
+    ].flatMap((entry) => normalizeMediaSource(entry));
+
+    if (rawItems.length > 0) {
+        return rawItems.map((item, index) => ({
+            ...item,
+            id: item.id || `${project.slug || project.project_name || 'project'}-${index}`,
+            title: item.title || project.project_name || 'Project media',
+            alt_text: item.alt_text || project.project_name || 'Project media',
+            project_name: project.project_name || project.title || 'Project',
+        }));
+    }
+
+    const coverImage = getProjectImageValue(project);
+    return [{
+        id: `${project.slug || project.id || 'project'}-cover`,
+        title: project.project_name || 'Project media',
+        media_type: 'image',
+        file_url: coverImage,
+        thumbnail_url: coverImage,
+        alt_text: project.project_name || 'Project media',
+        project_name: project.project_name || 'Project',
+    }];
+};
+
 const getAuthorizationToken = async () => {
     try {
         const currentUser = auth.currentUser;
@@ -237,7 +318,7 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
         project_summary: '',
         project_details: '',
     });
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [selectedFileName, setSelectedFileName] = useState('');
     const [processing, setProcessing] = useState(false);
     const [status, setStatus] = useState('');
@@ -257,8 +338,8 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
             project_summary: initialValues?.project_summary || '',
             project_details: initialValues?.project_details || '',
         });
-        setSelectedFile(null);
-        setSelectedFileName(initialValues?.cover_image_url ? 'Current cover image attached' : '');
+        setSelectedFiles([]);
+        setSelectedFileName(initialValues?.cover_image_url ? 'Current cover image attached' : 'No files selected');
         setProcessing(false);
         setStatus('');
     }, [isOpen, initialValues?.id]);
@@ -279,9 +360,9 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
     };
 
     const handleFileChange = (event) => {
-        const file = event.target.files?.[0] || null;
-        setSelectedFile(file);
-        setSelectedFileName(file?.name || '');
+        const files = Array.from(event.target.files || []);
+        setSelectedFiles(files);
+        setSelectedFileName(files.length > 0 ? files.map((file) => file.name).join(', ') : 'No files selected');
     };
 
     const handleSubmit = async (event) => {
@@ -300,8 +381,15 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
         if (initialValues?.id) {
             payload.append('id', String(initialValues.id));
         }
-        if (selectedFile) {
-            payload.append('cover_image_url', selectedFile, selectedFile.name);
+
+        if (selectedFiles.length > 0) {
+            selectedFiles.forEach((file) => {
+                payload.append('media_files', file, file.name);
+            });
+            const primaryFile = selectedFiles.find((file) => file.type.startsWith('image/')) || selectedFiles[0];
+            if (primaryFile) {
+                payload.append('cover_image_url', primaryFile, primaryFile.name);
+            }
         } else if (formData.cover_image_url?.trim()) {
             payload.append('cover_image_url', formData.cover_image_url.trim());
         }
@@ -363,9 +451,9 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
                             <input id="portfolio-project-url" name="project_url" value={formData.project_url} onChange={handleFieldChange} className="form-control" required />
                         </div>
                         <div className="portfolio-form-group">
-                            <label htmlFor="portfolio-cover-image">Cover Image</label>
-                            <input id="portfolio-cover-image" name="cover_image_url" type="file" accept="image/*" onChange={handleFileChange} className="form-control" />
-                            <small className="form-hint">{selectedFileName || (formData.cover_image_url ? 'Current image attached' : 'No file selected')}</small>
+                            <label htmlFor="portfolio-cover-image">Project Media</label>
+                            <input id="portfolio-cover-image" name="cover_image_url" type="file" accept="image/*,video/*" multiple onChange={handleFileChange} className="form-control" />
+                            <small className="form-hint">{selectedFileName || (formData.cover_image_url ? 'Current media attached' : 'No files selected')}</small>
                         </div>
                         <div className="portfolio-form-group full-width">
                             <label htmlFor="portfolio-project-summary">Project Summary</label>
@@ -403,17 +491,26 @@ function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit, canManageContent
                     <h2>Our Amazing Works</h2>
                     <p>Explore our portfolio to see the latest projects and creative solutions we've delivered.</p>
                     <div className="portfolio-gallery">
-                        {projects.map((project) => (
-                            <div className="portfolio-item" key={project.id}>
-                                <Link to={`/portfolio/${project.slug || project.id}`}>
-                                    <img src={resolveProjectImage(project.cover_image_url)} alt={project.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
-                                    <div className="portfolio-overlay">
-                                        <h4>{project.project_name}</h4>
-                                        <p>{project.project_summary}</p>
-                                    </div>
-                                </Link>
-                            </div>
-                        ))}
+                        {projects.map((project) => {
+                            const projectGallery = normalizeProjectGallery(project);
+                            const previewMedia = projectGallery[0] || { file_url: getProjectImageValue(project), alt_text: project.project_name };
+
+                            return (
+                                <div className="portfolio-item" key={project.id}>
+                                    <Link to={`/portfolio/${project.slug || project.id}`}>
+                                        {previewMedia.media_type === 'video' ? (
+                                            <video src={previewMedia.file_url} muted playsInline preload="metadata" onError={(event) => { event.currentTarget.poster = DEFAULT_PORTFOLIO_IMAGE; }} />
+                                        ) : (
+                                            <img src={previewMedia.file_url} alt={project.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
+                                        )}
+                                        <div className="portfolio-overlay">
+                                            <h4>{project.project_name}</h4>
+                                            <p>{project.project_summary}</p>
+                                        </div>
+                                    </Link>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -425,6 +522,8 @@ function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit, canManag
     if (!project) {
         return <DefaultPortfolio projects={projects} onOpenCreate={onOpenCreate} onOpenEdit={onOpenEdit} canManageContent={canManageContent} />;
     }
+
+    const projectGallery = normalizeProjectGallery(project);
 
     return (
         <>
@@ -456,16 +555,18 @@ function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit, canManag
                             )}
                         </div>
                     </div>
-                    <div className="portfolio-gallery portfolio-gallery-active">
-                        {projects.map((item) => (
-                            <div className="portfolio-item" key={item.id}>
-                                <Link to={`/portfolio/${item.slug || item.id}`}>
-                                    <img src={resolveProjectImage(item.cover_image_url)} alt={item.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
-                                    <div className="portfolio-overlay">
-                                        <h4>{item.project_name}</h4>
-                                        <p>{item.project_summary}</p>
-                                    </div>
-                                </Link>
+                    <div className="portfolio-gallery portfolio-gallery-active portfolio-mixed-gallery">
+                        {projectGallery.map((item) => (
+                            <div className="portfolio-item portfolio-mixed-item" key={item.id}>
+                                {item.media_type === 'video' ? (
+                                    <video src={item.file_url} controls playsInline preload="metadata" />
+                                ) : (
+                                    <img src={item.file_url} alt={item.alt_text || item.title} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
+                                )}
+                                <div className="portfolio-overlay">
+                                    <h4>{item.title}</h4>
+                                    <p>{item.media_type === 'video' ? 'Video' : 'Image'}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -494,18 +595,25 @@ function Portoflio() {
                 const json = await response.json();
                 const items = extractResponseCollection(json, ['projects', 'portfolio', 'items']);
                 const validProjects = items
-                    .filter((item) => item && (item.project_name || item.slug || item.project_summary || item.project_details || item.cover_image_url))
-                    .map((item) => ({
-                        id: item.id,
-                        project_name: item.project_name || item.title || 'Untitled Project',
-                        slug: item.slug || slugify(item.project_name || item.title || ''),
-                        client_name: item.client_name || '',
-                        completion_date: item.completion_date || '',
-                        project_url: item.project_url || item.slug || slugify(item.project_name || item.title || ''),
-                        cover_image_url: getProjectImageValue(item),
-                        project_summary: item.project_summary || '',
-                        project_details: item.project_details || '',
-                    }));
+                    .filter((item) => item && (item.project_name || item.slug || item.project_summary || item.project_details || item.cover_image_url || item.media_files || item.gallery || item.images || item.videos))
+                    .map((item) => {
+                        const groupGallery = normalizeProjectGallery(item);
+                        const coverImage = groupGallery[0]?.file_url || getProjectImageValue(item);
+
+                        return {
+                            id: item.id,
+                            project_name: item.project_name || item.title || 'Untitled Project',
+                            slug: item.slug || slugify(item.project_name || item.title || ''),
+                            client_name: item.client_name || '',
+                            completion_date: item.completion_date || '',
+                            project_url: item.project_url || item.slug || slugify(item.project_name || item.title || ''),
+                            cover_image_url: coverImage,
+                            project_summary: item.project_summary || '',
+                            project_details: item.project_details || '',
+                            gallery: groupGallery,
+                            media_files: item.media_files || groupGallery,
+                        };
+                    });
 
                 setProjects(validProjects.length > 0 ? validProjects : DEFAULT_PORTFOLIO);
             } catch {

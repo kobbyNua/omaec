@@ -66,8 +66,49 @@ const isLoggedIn = () => {
     return isAdminLoggedIn();
 };
 
+const getStoredToken = (key) => {
+    const storedValue = window.localStorage.getItem(key);
+    if (!storedValue) {
+        return '';
+    }
+
+    try {
+        const parsed = JSON.parse(storedValue);
+        const tokenCandidates = [
+            parsed?.token,
+            parsed?.accessToken,
+            parsed?.idToken,
+            parsed?.authToken,
+            parsed?.jwt,
+            parsed?.authorization,
+        ];
+
+        for (const token of tokenCandidates) {
+            if (typeof token === 'string' && token.trim()) {
+                return token.trim();
+            }
+        }
+
+        if (typeof parsed?.email === 'string' && parsed.email.trim()) {
+            return `user:${parsed.email.trim()}`;
+        }
+
+        if (typeof parsed === 'string' && parsed.trim() && !['true', 'false', 'google', 'firebase'].includes(parsed.trim().toLowerCase())) {
+            return parsed.trim();
+        }
+
+        return '';
+    } catch {
+        const normalized = storedValue.trim();
+        if (normalized && !['true', 'false', 'google', 'firebase'].includes(normalized.toLowerCase())) {
+            return normalized;
+        }
+        return '';
+    }
+};
+
 const getAuthorizationToken = async () => {
-    const currentUser = auth.currentUser;
+    const currentUser = auth?.currentUser;
     if (currentUser) {
         try {
             const idToken = await currentUser.getIdToken(true);
@@ -79,19 +120,14 @@ const getAuthorizationToken = async () => {
         }
     }
 
-    const storedUser = window.localStorage.getItem('user-auth');
-    if (storedUser) {
-        try {
-            const parsedUser = JSON.parse(storedUser);
-            if (parsedUser?.token) {
-                return `Bearer ${parsedUser.token}`;
-            }
-            if (parsedUser?.email) {
-                return `Bearer user:${parsedUser.email}`;
-            }
-        } catch (error) {
-            console.warn('Unable to parse user-auth token:', error);
-        }
+    const adminToken = getStoredToken('admin-auth');
+    if (adminToken) {
+        return adminToken.startsWith('Bearer ') ? adminToken : `Bearer ${adminToken}`;
+    }
+
+    const userToken = getStoredToken('user-auth');
+    if (userToken) {
+        return userToken.startsWith('Bearer ') ? userToken : `Bearer ${userToken}`;
     }
 
     return '';
@@ -139,12 +175,14 @@ const isValidMediaUrl = (value) => {
     return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)(\?.*)?$/i.test(trimmed) || trimmed.includes('/media/uploads/');
 };
 
-function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, onSuccess }) {
+function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, onSuccess, mode = 'create' }) {
+    const fileMode = mode === 'file';
+    const detailsMode = mode === 'details';
     const [formData, setFormData] = useState({
         title: '',
         media_type: 'image',
         file_url: '',
-        thumbnail_url: '', // will hold a slug (thumbnail identifier)
+        thumbnail_url: '',
         alt_text: '',
     });
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -175,15 +213,35 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
 
     const validateForm = () => {
         const nextErrors = {};
-        if (!formData.title?.trim()) {
+
+        if (!detailsMode && !fileMode && !formData.title?.trim()) {
             nextErrors.title = 'Title is required.';
         }
-        if (!formData.media_type) {
+
+        if (!detailsMode && !fileMode && !formData.media_type) {
             nextErrors.media_type = 'Media type is required.';
         }
+
+        if (fileMode) {
+            if (!selectedFiles.length && !formData.file_url?.trim()) {
+                nextErrors.file_url = 'A replacement file is required.';
+            }
+            return nextErrors;
+        }
+
+        if (detailsMode) {
+            if (!formData.title?.trim()) {
+                nextErrors.title = 'Title is required.';
+            }
+            if (!formData.media_type) {
+                nextErrors.media_type = 'Media type is required.';
+            }
+            return nextErrors;
+        }
+
         if (formData.media_type === 'video') {
             if (!selectedFiles.length && !formData.file_url?.trim()) {
-                nextErrors.file_url = 'Video URL is required.';
+                nextErrors.file_url = 'Video file is required.';
             }
         } else if (!selectedFiles.length && !initialValues?.file_url && !formData.file_url?.trim()) {
             nextErrors.file_url = 'Image is required.';
@@ -209,7 +267,6 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
                 thumbnail_url: slugify(value),
             }));
         } else {
-            // do not derive thumbnail from file_url; thumbnail is slug of title
             setFormData((previous) => ({
                 ...previous,
                 [name]: value,
@@ -222,7 +279,6 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         const files = Array.from(event.target.files || []);
         setSelectedFiles(files);
         const firstFile = files[0] || null;
-        // Always use title slug for thumbnail; keep existing title-based slug if available
         setFormData((previous) => ({
             ...previous,
             thumbnail_url: slugify(previous.title || ''),
@@ -242,33 +298,33 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         setProcessing(true);
         setStatus(initialValues?.id ? 'Saving media...' : 'Creating media...');
 
-        // Check duplicates: fetch existing media and prevent create if title or thumbnail exists
         try {
-            const checkResp = await fetch(MEDIA_API_URL, { method: 'GET' });
-            if (checkResp.ok) {
-                const existing = await checkResp.json().catch(() => []);
-                const arr = Array.isArray(existing) ? existing : existing?.data || [];
-                const titleLower = (formData.title || '').trim().toLowerCase();
-                const thumbSlug = slugify(formData.title || '');
-                const duplicate = arr.find((it) => {
-                    if (!it) return false;
-                    const sameId = initialValues?.id && (String(it.id) === String(initialValues.id));
-                    if (sameId) return false;
-                    const itTitle = (it.title || '').trim().toLowerCase();
-                    const itThumb = (it.thumbnail_url || it.thumbnail || it.file_url || '').trim();
-                    if (itTitle && titleLower && itTitle === titleLower) return true;
-                    if (itThumb && thumbSlug && (itThumb === thumbSlug || slugify(itThumb) === thumbSlug || slugify(it.title || '') === thumbSlug)) return true;
-                    return false;
-                });
+            if (!fileMode && !detailsMode) {
+                const checkResp = await fetch(MEDIA_API_URL, { method: 'GET' });
+                if (checkResp.ok) {
+                    const existing = await checkResp.json().catch(() => []);
+                    const arr = Array.isArray(existing) ? existing : existing?.data || [];
+                    const titleLower = (formData.title || '').trim().toLowerCase();
+                    const thumbSlug = slugify(formData.title || '');
+                    const duplicate = arr.find((it) => {
+                        if (!it) return false;
+                        const sameId = initialValues?.id && (String(it.id) === String(initialValues.id));
+                        if (sameId) return false;
+                        const itTitle = (it.title || '').trim().toLowerCase();
+                        const itThumb = (it.thumbnail_url || it.thumbnail || it.file_url || '').trim();
+                        if (itTitle && titleLower && itTitle === titleLower) return true;
+                        if (itThumb && thumbSlug && (itThumb === thumbSlug || slugify(itThumb) === thumbSlug || slugify(it.title || '') === thumbSlug)) return true;
+                        return false;
+                    });
 
-                if (duplicate) {
-                    setProcessing(false);
-                    setStatus('A media item with the same title or thumbnail already exists.');
-                    return;
+                    if (duplicate) {
+                        setProcessing(false);
+                        setStatus('A media item with the same title or thumbnail already exists.');
+                        return;
+                    }
                 }
             }
         } catch (e) {
-            // ignore duplicate check failures and proceed
             console.warn('Duplicate check failed:', e);
         }
 
@@ -285,34 +341,59 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
         const thumbnailValue = formData.thumbnail_url?.trim() || (fileValue ? slugify(fileValue) : '');
         const altText = formData.alt_text?.trim() || title;
 
-        if (title) {
-            payload.append('title', title);
-        }
-        if (mediaType) {
-            payload.append('media_type', mediaType);
-        }
-        if (selectedFiles.length > 0) {
-            if (selectedFiles.length === 1) {
-                // single file: keep existing behavior (file blob)
-                payload.append('file_url', selectedFiles[0]);
-            } else {
-                // multiple files: append each file as `file_url[]` so server receives multiple file parts
-                selectedFiles.forEach((file) => {
-                    payload.append('file_url[]', file);
-                });
-            }
-        } else if (fileValue) {
-            // when a URL is provided instead of file upload
-            payload.append('file_url', fileValue);
-        }
-        if (thumbnailValue) {
-            payload.append('thumbnail_url', thumbnailValue);
-        }
-        if (altText) {
-            payload.append('alt_text', altText);
-        }
         if (initialValues?.id) {
             payload.append('id', String(initialValues.id));
+        }
+
+        if (mode === 'details') {
+            if (title) {
+                payload.append('title', title);
+            }
+            if (mediaType) {
+                payload.append('media_type', mediaType);
+            }
+            if (thumbnailValue) {
+                payload.append('thumbnail_url', thumbnailValue);
+            }
+            if (altText) {
+                payload.append('alt_text', altText);
+            }
+        } else if (mode === 'file') {
+            if (selectedFiles.length > 0) {
+                payload.append('file_url', selectedFiles[0]);
+            } else if (fileValue) {
+                payload.append('file_url', fileValue);
+            }
+            if (mediaType) {
+                payload.append('media_type', mediaType);
+            }
+            if (thumbnailValue) {
+                payload.append('thumbnail_url', thumbnailValue);
+            }
+        } else {
+            if (title) {
+                payload.append('title', title);
+            }
+            if (mediaType) {
+                payload.append('media_type', mediaType);
+            }
+            if (selectedFiles.length > 0) {
+                if (selectedFiles.length === 1) {
+                    payload.append('file_url', selectedFiles[0]);
+                } else {
+                    selectedFiles.forEach((file) => {
+                        payload.append('file_url[]', file);
+                    });
+                }
+            } else if (fileValue) {
+                payload.append('file_url', fileValue);
+            }
+            if (thumbnailValue) {
+                payload.append('thumbnail_url', thumbnailValue);
+            }
+            if (altText) {
+                payload.append('alt_text', altText);
+            }
         }
 
         try {
@@ -356,42 +437,56 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
                         <form onSubmit={handleSubmit} noValidate encType="multipart/form-data">
                             <input type="hidden" name="id" value={initialValues?.id || ''} />
 
-                            <div className="form-group">
-                                <label htmlFor="media-title">Title</label>
-                                <input id="media-title" name="title" type="text" className="form-control" value={formData.title} onChange={handleFieldChange} required />
-                                {errors.title && <p className="form-error">{errors.title}</p>}
-                            </div>
+                            {!fileMode && (
+                                <>
+                                    <div className="form-group">
+                                        <label htmlFor="media-title">Title</label>
+                                        <input id="media-title" name="title" type="text" className="form-control" value={formData.title} onChange={handleFieldChange} required />
+                                        {errors.title && <p className="form-error">{errors.title}</p>}
+                                    </div>
 
-                            <div className="form-group">
-                                <label htmlFor="media-type">Media Type</label>
-                                <select id="media-type" name="media_type" className="form-control" value={formData.media_type} onChange={handleFieldChange}>
-                                    <option value="image">Image</option>
-                                    <option value="video">Video</option>
-                                </select>
-                                {errors.media_type && <p className="form-error">{errors.media_type}</p>}
-                            </div>
+                                    <div className="form-group">
+                                        <label htmlFor="media-type">Media Type</label>
+                                        <select id="media-type" name="media_type" className="form-control" value={formData.media_type} onChange={handleFieldChange}>
+                                            <option value="image">Image</option>
+                                            <option value="video">Video</option>
+                                        </select>
+                                        {errors.media_type && <p className="form-error">{errors.media_type}</p>}
+                                    </div>
+                                </>
+                            )}
 
-                            <div className="form-group">
-                                <label htmlFor="media-file-url">{formData.media_type === 'video' ? 'Video URL' : 'Image File'}</label>
-                                {formData.media_type === 'video' ? (
-                                    <input id="media-file-url" name="file_url" type="text" className="form-control" value={formData.file_url} onChange={handleFieldChange} placeholder="https://example.com/video.mp4" />
-                                ) : (
-                                    <input id="media-file-url" name="file_url" type="file" className="form-control" accept="image/*" multiple onChange={handleFileChange} />
-                                )}
-                                {errors.file_url && <p className="form-error">{errors.file_url}</p>}
-                            </div>
+                            {fileMode && (
+                                <div className="form-group">
+                                    <label htmlFor="media-file-url">{formData.media_type === 'video' ? 'Replace Video File' : 'Replace Image File'}</label>
+                                    <input id="media-file-url" name="file_url" type="file" className="form-control" accept={formData.media_type === 'video' ? 'video/*' : 'image/*'} onChange={handleFileChange} />
+                                    {errors.file_url && <p className="form-error">{errors.file_url}</p>}
+                                </div>
+                            )}
 
-                            <div className="form-group">
-                                <label htmlFor="media-thumbnail">Thumbnail</label>
-                                <input id="media-thumbnail" name="thumbnail_url" type="text" className="form-control" value={formData.thumbnail_url || formData.file_url} readOnly disabled />
-                                <small>Thumbnail is populated automatically from the selected media URL.</small>
-                            </div>
+                            {!fileMode && !detailsMode && (
+                                <div className="form-group">
+                                    <label htmlFor="media-file-url">{formData.media_type === 'video' ? 'Video File' : 'Image File'}</label>
+                                    <input id="media-file-url" name="file_url" type="file" className="form-control" accept={formData.media_type === 'video' ? 'video/*' : 'image/*'} multiple onChange={handleFileChange} />
+                                    {errors.file_url && <p className="form-error">{errors.file_url}</p>}
+                                </div>
+                            )}
 
-                            <div className="form-group">
-                                <label htmlFor="media-alt-text">Alt Text</label>
-                                <input id="media-alt-text" name="alt_text" type="text" className="form-control" value={formData.alt_text} readOnly disabled />
-                                <small>Alt text is generated from the title.</small>
-                            </div>
+                            {!fileMode && (
+                                <div className="form-group">
+                                    <label htmlFor="media-thumbnail">Thumbnail</label>
+                                    <input id="media-thumbnail" name="thumbnail_url" type="text" className="form-control" value={formData.thumbnail_url || formData.file_url} readOnly disabled />
+                                    <small>Thumbnail is populated automatically from the selected media URL.</small>
+                                </div>
+                            )}
+
+                            {!fileMode && (
+                                <div className="form-group">
+                                    <label htmlFor="media-alt-text">Alt Text</label>
+                                    <input id="media-alt-text" name="alt_text" type="text" className="form-control" value={formData.alt_text} readOnly disabled />
+                                    <small>Alt text is generated from the title.</small>
+                                </div>
+                            )}
 
                             <button type="submit" className="btn btn-primary btn-block" disabled={processing}>{processing ? 'Saving...' : submitLabel}</button>
                             {status && <p className="form-status">{status}</p>}
@@ -401,6 +496,101 @@ function MediaModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
             </div>
         </Modal>,
         document.body
+    );
+}
+
+function VideoPreview({ src, alt, fallback }) {
+    const [snapshot, setSnapshot] = useState('');
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        const createSnapshot = () => {
+            const resolvedSrc = resolveMediaUrl(src || '');
+            if (!resolvedSrc) {
+                if (!isCancelled) setSnapshot(fallback);
+                return;
+            }
+
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+            video.crossOrigin = 'anonymous';
+
+            const captureFrame = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    if (!context) {
+                        if (!isCancelled) setSnapshot(fallback);
+                        return;
+                    }
+
+                    const width = video.videoWidth || 640;
+                    const height = video.videoHeight || 360;
+                    canvas.width = width;
+                    canvas.height = height;
+                    context.drawImage(video, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    if (!isCancelled) {
+                        setSnapshot(dataUrl);
+                    }
+                } catch {
+                    if (!isCancelled) setSnapshot(fallback);
+                }
+            };
+
+            const handleLoadedMetadata = () => {
+                try {
+                    if (Number.isFinite(video.duration) && video.duration > 0) {
+                        const seekTime = Math.min(0.5, video.duration * 0.25 || 0.5);
+                        video.currentTime = seekTime;
+                    } else {
+                        captureFrame();
+                    }
+                } catch {
+                    if (!isCancelled) setSnapshot(fallback);
+                }
+            };
+
+            const handleSeeked = () => {
+                captureFrame();
+            };
+
+            const handleError = () => {
+                if (!isCancelled) {
+                    setSnapshot(fallback);
+                }
+            };
+
+            video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+            video.addEventListener('seeked', handleSeeked, { once: true });
+            video.addEventListener('error', handleError, { once: true });
+            video.src = resolvedSrc;
+            video.load();
+
+            return () => {
+                isCancelled = true;
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            };
+        };
+
+        const cleanup = createSnapshot();
+        return () => {
+            if (cleanup) cleanup();
+        };
+    }, [src, fallback]);
+
+    return (
+        <img
+            src={snapshot || fallback}
+            alt={alt || 'Video preview'}
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
     );
 }
 
@@ -415,40 +605,54 @@ function DefaultMediaPage({ onCreateClick }) {
             <div className="media-content">
                 <div className="media-video-works">
                     <div className="container">
-                        <div className="recent-video-works">
-                            <h3>Recent Video Works</h3>
-                            <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80">
-                                <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4" />
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
-                        <div className="some-video-works">
+                        <div className="video-works-gallery-section">
                             <h3>
-                                Some of Our Video Works
+                                Video Works
                                 {isLoggedIn() && (
                                     <button type="button" className="about-section-add-button section-add-button" onClick={onCreateClick} aria-label="Add Video Thumbnail">
                                         <i className="fas fa-plus" aria-hidden="true" />
                                     </button>
                                 )}
                             </h3>
-                            <div className="video-thumbnails">
-                                <div className="video-thumbnail">
-                                    <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80">
-                                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-                                        Your browser does not support the video tag.
-                                    </video>
+                            <div className="video-gallery">
+                                <div className="video-work-item">
+                                    <div className="video-work-thumb">
+                                        <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80" alt="Brand Story preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                    </div>
+                                    <div className="video-work-meta">
+                                        <div className="title">Brand Story</div>
+                                        <div className="subtitle">Video</div>
+                                    </div>
                                 </div>
-                                <div className="video-thumbnail">
-                                    <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80">
-                                        <source src="https://www.w3schools.com/html/movie.mp4" type="video/mp4" />
-                                        Your browser does not support the video tag.
-                                    </video>
+
+                                <div className="video-work-item">
+                                    <div className="video-work-thumb">
+                                        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80" alt="Commercial Reel preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                    </div>
+                                    <div className="video-work-meta">
+                                        <div className="title">Commercial Reel</div>
+                                        <div className="subtitle">Video</div>
+                                    </div>
                                 </div>
-                                <div className="video-thumbnail">
-                                    <video controls playsInline preload="metadata" poster="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80">
-                                        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm" />
-                                        Your browser does not support the video tag.
-                                    </video>
+
+                                <div className="video-work-item">
+                                    <div className="video-work-thumb">
+                                        <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80" alt="Event Coverage preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                    </div>
+                                    <div className="video-work-meta">
+                                        <div className="title">Event Coverage</div>
+                                        <div className="subtitle">Video</div>
+                                    </div>
+                                </div>
+
+                                <div className="video-work-item">
+                                    <div className="video-work-thumb">
+                                        <img src="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1200&q=80" alt="Social Highlight preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                    </div>
+                                    <div className="video-work-meta">
+                                        <div className="title">Social Highlight</div>
+                                        <div className="subtitle">Video</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -567,7 +771,16 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
 
     const videos = useMemo(() => mediaItems.filter((item) => item.media_type === 'video' && isValidMediaUrl(item.file_url)), [mediaItems]);
     const images = useMemo(() => mediaItems.filter((item) => item.media_type !== 'video' && isValidMediaUrl(item.file_url)), [mediaItems]);
-    // Deduplicate images by title (or file_url) so only one photo displays per same name
+    // Deduplicate videos and images by title/file so repeated media entries only show once per group.
+    const uniqueVideos = useMemo(() => {
+        const seen = new Set();
+        return videos.filter((video) => {
+            const key = slugify(video.title || video.file_url || video.thumbnail_url || video.id || '');
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [videos]);
     const uniqueImages = useMemo(() => {
         const seen = new Set();
         return images.filter((img) => {
@@ -577,9 +790,6 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
             return true;
         });
     }, [images]);
-    // Use the last item as the most recently posted video and show up to four previous videos as thumbnails
-    const recentVideo = videos.length > 0 ? videos[videos.length - 1] : null;
-    const thumbnailVideos = videos.length > 1 ? videos.slice(Math.max(0, videos.length - 5), videos.length - 1) : [];
 
     if (!hasData && !loading) {
         return null;
@@ -600,52 +810,30 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
                             <p>Loading media...</p>
                         ) : (
                             <>
-                                <div className="recent-video-works">
-                                    <h3>Recent Video Works</h3>
-                                    {recentVideo ? (
-                                        <>
-                                            <h4>{recentVideo.title}</h4>
-                                            <video controls poster={recentVideo.thumbnail_url || recentVideo.file_url}>
-                                                <source src={resolveMediaUrl(recentVideo.file_url)} type="video/mp4" />
-                                                Your browser does not support the video tag.
-                                            </video>
-                                        </>
-                                    ) : (
-                                        <p>No recent video available</p>
-                                    )}
-                                </div>
-
-                                <div className="some-video-works">
+                                <div className="video-works-gallery-section">
                                     <h3>
-                                        Some of Our Video Works
+                                        Video Works
                                         {isLoggedIn() && (
                                             <button type="button" className="about-section-add-button section-add-button" onClick={onCreateClick} aria-label="Add Video Thumbnail">
                                                 <i className="fas fa-plus" aria-hidden="true" />
                                             </button>
                                         )}
                                     </h3>
-                                    <div className="video-thumbnails">
-                                        {thumbnailVideos.length > 0 ? thumbnailVideos.map((video) => (
-                                            <div className="video-thumbnail video-card" key={video.id || video.title}>
-                                                <div className="video-thumb">
-                                                    <video controls poster={video.thumbnail_url || video.file_url}>
-                                                        <source src={resolveMediaUrl(video.file_url)} type="video/mp4" />
-                                                        Your browser does not support the video tag.
-                                                    </video>
-                                                </div>
-                                                <div className="video-meta">
-                                                    <div className="title">{video.title}</div>
-                                                    <div className="subtitle">Video</div>
-                                                    {isLoggedIn() && (
-                                                        <div style={{marginTop: '0.5rem'}}>
-                                                            <button type="button" className="service-card-edit-button" onClick={() => onEditClick(video)} aria-label={`Edit ${video.title}`}>
-                                                                <i className="fas fa-edit" aria-hidden="true" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )) : <p>No additional videos available</p>}
+                                    <div className="video-gallery">
+                                        {uniqueVideos.length > 0 ? uniqueVideos.map((video) => {
+                                            const fallbackPreview = video.thumbnail_url || 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1200&q=80';
+                                            return (
+                                                <Link to={`/media-video?video=${encodeURIComponent(slugify(video.title || video.thumbnail_url || video.file_url || ''))}`} className="video-work-item" key={video.id || video.title} aria-label={`View videos for ${video.title}`}>
+                                                    <div className="video-work-thumb">
+                                                        <VideoPreview src={video.file_url} alt={video.alt_text || video.title || 'Video preview'} fallback={fallbackPreview} />
+                                                    </div>
+                                                    <div className="video-work-meta">
+                                                        <div className="title">{video.title}</div>
+                                                        <div className="subtitle">Video</div>
+                                                    </div>
+                                                </Link>
+                                            );
+                                        }) : <p className="media-empty-state">No videos available</p>}
                                     </div>
                                 </div>
                             </>
@@ -663,11 +851,6 @@ function ActiveMediaPage({ onCreateClick, onEditClick, onDataStateChange }) {
                                     <Link to={`/media-photo?thumbnail=${encodeURIComponent(slug)}`} aria-label={`View photos for ${slug}`}>
                                         <img src={resolveMediaUrl(image.file_url)} alt={image.alt_text || image.title || 'Media'} />
                                     </Link>
-                                    {isLoggedIn() && (
-                                        <button type="button" className="service-card-edit-button photo-edit-button" onClick={() => onEditClick(image)} aria-label={`Edit ${image.title}`}>
-                                            <i className="fas fa-edit" aria-hidden="true" />
-                                        </button>
-                                    )}
                                 </div>
                             );
                         }) : <p className="media-empty-state">No images available</p>}
@@ -747,4 +930,5 @@ function Media() {
     );
 }
 
-export default Media
+export { MediaModal };
+export default Media;

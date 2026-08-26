@@ -82,30 +82,77 @@ const getAuthorizationToken = async () => {
     return '';
 };
 
+const resolveCarouselAssetUrl = (value) => {
+    let src = value || '';
+    if (!src) {
+        return '';
+    }
+
+    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+        return src;
+    }
+
+    if (src.includes('/var/www/html')) {
+        src = src.replace('/var/www/html', '');
+        return `${BACKEND_API_ORIGIN}${src}`;
+    }
+
+    if (src.startsWith('/')) {
+        return `${BACKEND_API_ORIGIN}${src}`;
+    }
+
+    return src;
+};
+
+const isLikelyVideoAsset = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) {
+        return false;
+    }
+
+    return /\.(mp4|webm|ogg|mov|m4v|avi|mkv|3gp)(\?.*)?$/i.test(raw)
+        || raw.includes('video')
+        || raw.includes('.mp4')
+        || raw.includes('.webm');
+};
+
+const getSlideTimestamp = (item) => {
+    const value = item?.created_at || item?.createdAt || item?.created || item?.updated_at || item?.updatedAt || item?.updated || item?.timestamp || item?.date || '';
+    if (!value) {
+        return 0;
+    }
+
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
 function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger = false }){
     const [isOpen, setIsOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [subtitle, setSubtitle] = useState("");
-    const [imageFile, setImageFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedMediaType, setSelectedMediaType] = useState('image');
     const [previewUrl, setPreviewUrl] = useState("");
     const [status, setStatus] = useState("");
 
     useEffect(() => {
-        if (!imageFile) {
+        if (!selectedFile) {
             setPreviewUrl("");
             return;
         }
 
-        const objectUrl = URL.createObjectURL(imageFile);
+        const objectUrl = URL.createObjectURL(selectedFile);
         setPreviewUrl(objectUrl);
 
         return () => URL.revokeObjectURL(objectUrl);
-    }, [imageFile]);
+    }, [selectedFile]);
 
     const handleFileChange = (event) => {
         const file = event.target.files?.[0];
         if (file) {
-            setImageFile(file);
+            const fileIsVideo = file.type.startsWith('video/') || isLikelyVideoAsset(file.name);
+            setSelectedMediaType(fileIsVideo ? 'video' : 'image');
+            setSelectedFile(file);
         }
     };
 
@@ -116,8 +163,9 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
         const formData = new FormData();
         formData.append('title', title);
         formData.append('subtitle', subtitle);
-        if (imageFile) {
-            formData.append('image_url', imageFile, imageFile.name);
+        formData.append('media_type', selectedMediaType);
+        if (selectedFile) {
+            formData.append('image_url', selectedFile, selectedFile.name);
         }
 
         const authToken = await getAuthorizationToken();
@@ -136,7 +184,8 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
             setStatus('Banner created successfully.');
             setTitle('');
             setSubtitle('');
-            setImageFile(null);
+            setSelectedFile(null);
+            setSelectedMediaType('image');
             setPreviewUrl('');
         } else {
             const data = await response.json().catch(() => null);
@@ -194,11 +243,11 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
                                     required
                                 />
 
-                                <label htmlFor="banner-image">Image URL / Upload</label>
+                                <label htmlFor="banner-image">Image / Video Upload</label>
                                 <input
                                     id="banner-image"
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*,video/*"
                                     onChange={handleFileChange}
                                     required
                                 />
@@ -226,18 +275,26 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
                                 <div className="carousel-preview-card">
                                     <div className="banner-preview-image">
                                         {previewUrl ? (
-                                            <img src={previewUrl} alt="Banner preview" />
+                                            selectedMediaType === 'video' ? (
+                                                <video controls playsInline preload="metadata" src={previewUrl} />
+                                            ) : (
+                                                <img src={previewUrl} alt="Banner preview" />
+                                            )
                                         ) : (
-                                            <div className="preview-empty">Select an image to preview</div>
+                                            <div className="preview-empty">Select an image or video to preview</div>
                                         )}
                                     </div>
                                 </div>
                                 <div className="carousel-preview-card">
                                     <div className="banner-preview-image">
                                         {previewUrl ? (
-                                            <img src={previewUrl} alt="Banner preview" />
+                                            selectedMediaType === 'video' ? (
+                                                <video controls playsInline preload="metadata" src={previewUrl} />
+                                            ) : (
+                                                <img src={previewUrl} alt="Banner preview" />
+                                            )
                                         ) : (
-                                            <div className="preview-empty">Select an image to preview</div>
+                                            <div className="preview-empty">Select an image or video to preview</div>
                                         )}
                                     </div>
                                 </div>
@@ -436,23 +493,36 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                     const parsedSlides = items
                         .filter((it) => Number(it.is_active) === 1 || it.is_active === true || it.is_active === undefined)
                         .map((item, index) => {
-                            let src = item.image_url || item.image || item.src || item.url || item.picture || '';
-                            if (src && !src.startsWith('http')) {
-                                if (src.includes('/var/www/html')) {
-                                    src = `${BACKEND_API_ORIGIN}${src.replace('/var/www/html', '')}`;
-                                } else if (src.startsWith('/')) {
-                                    src = `${BACKEND_API_ORIGIN}${src}`;
-                                }
-                            }
+                            const videoSrc = item.video_url || item.file_url || item.video || item.mp4 || item.videoUrl || '';
+                            const imageSrc = item.image_url || item.image || item.src || item.url || item.picture || '';
+                            const mediaType = String(item.media_type || item.type || item.kind || '').toLowerCase();
+                            const inferredType = mediaType === 'video' || isLikelyVideoAsset(videoSrc) ? 'video' : 'image';
+                            const src = inferredType === 'video'
+                                ? resolveCarouselAssetUrl(videoSrc || imageSrc)
+                                : resolveCarouselAssetUrl(imageSrc || videoSrc);
 
                             return {
                                 src,
+                                mediaType: inferredType,
                                 title: item.title || item.tagline || '',
                                 subtitle: item.subTitle || item.subtitle || '',
                                 alt: item.title || item.subTitle || item.subtitle || `Carousel slide ${index + 1}`,
+                                createdAt: getSlideTimestamp(item),
                             };
                         })
                         .filter((s) => Boolean(s.src));
+
+                    const lastFourSlides = [...parsedSlides].slice(-4).reverse();
+                    const finalSlides = [...lastFourSlides].sort((a, b) => {
+                        const aPriority = a.mediaType === 'video' ? 1 : 0;
+                        const bPriority = b.mediaType === 'video' ? 1 : 0;
+
+                        if (aPriority !== bPriority) {
+                            return bPriority - aPriority;
+                        }
+
+                        return 0;
+                    });
 
                     if (isMounted) {
                         console.debug('ActiveCarousel: parsedSlides count:', parsedSlides.length, parsedSlides);
@@ -464,15 +534,38 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                                 : (json?.data || json?.home || json?.slides || json?.banners || []);
                             if (Array.isArray(altSource) && altSource.length > 0) {
                                 const altParsed = altSource
-                                    .map((item, index) => ({
-                                        src: item.image_url || item.image || item.src || item.url || item.picture || '',
-                                        title: item.title || item.tagline || '',
-                                        subtitle: item.subTitle || item.subtitle || '',
-                                        alt: item.title || item.subTitle || item.subtitle || `Carousel slide ${index + 1}`,
-                                    }))
+                                    .map((item, index) => {
+                                        const videoSrc = item.video_url || item.file_url || item.video || item.mp4 || item.videoUrl || '';
+                                        const imageSrc = item.image_url || item.image || item.src || item.url || item.picture || '';
+                                        const mediaType = String(item.media_type || item.type || item.kind || '').toLowerCase();
+                                        const inferredType = mediaType === 'video' || isLikelyVideoAsset(videoSrc) ? 'video' : 'image';
+                                        const src = inferredType === 'video'
+                                            ? resolveCarouselAssetUrl(videoSrc || imageSrc)
+                                            : resolveCarouselAssetUrl(imageSrc || videoSrc);
+
+                                        return {
+                                            src,
+                                            mediaType: inferredType,
+                                            title: item.title || item.tagline || '',
+                                            subtitle: item.subTitle || item.subtitle || '',
+                                            alt: item.title || item.subTitle || item.subtitle || `Carousel slide ${index + 1}`,
+                                            createdAt: getSlideTimestamp(item),
+                                        };
+                                    })
                                     .filter((s) => Boolean(s.src));
                                 if (altParsed.length > 0) {
-                                    setSlides(altParsed);
+                                    const lastFourAltSlides = [...altParsed].slice(-4).reverse();
+                                    const finalAltSlides = [...lastFourAltSlides].sort((a, b) => {
+                                        const aPriority = a.mediaType === 'video' ? 1 : 0;
+                                        const bPriority = b.mediaType === 'video' ? 1 : 0;
+
+                                        if (aPriority !== bPriority) {
+                                            return bPriority - aPriority;
+                                        }
+
+                                        return 0;
+                                    });
+                                    setSlides(finalAltSlides);
                                     setHasData(true);
                                     if (typeof onDataStateChange === 'function') onDataStateChange(true);
                                 } else {
@@ -486,8 +579,8 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
                                 if (typeof onDataStateChange === 'function') onDataStateChange(false);
                             }
                         } else {
-                            setSlides(parsedSlides);
-                            const has = parsedSlides.length > 0;
+                            setSlides(finalSlides);
+                            const has = finalSlides.length > 0;
                             setHasData(has);
                             if (typeof onDataStateChange === 'function') onDataStateChange(has);
                         }
@@ -527,12 +620,14 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
              return;
          }
 
-         const interval = setInterval(() => {
+         const activeSlide = slides[activeIndex] || slides[0];
+         const duration = activeSlide?.mediaType === 'video' ? 20000 : 15000;
+         const timeoutId = setTimeout(() => {
              setActiveIndex((prevIndex) => (prevIndex + 1) % slides.length);
-         }, 5000); // Change slide every 5 seconds
+         }, duration);
 
-         return () => clearInterval(interval);
-     }, [slides.length]);
+         return () => clearTimeout(timeoutId);
+    }, [activeIndex, slides]);
 
      const goToSlide = (index) => {
          setActiveIndex(index);
@@ -578,7 +673,11 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
 
               {slides.map((slide, index) => (
                   <div key={`${slide.src}-${index}`} className={`carousel-item ${activeIndex === index ? "active" : ""}`}>
-                      <img src={slide.src} alt={slide.alt} />
+                      {slide.mediaType === 'video' ? (
+                          <video playsInline autoPlay muted loop src={slide.src} />
+                      ) : (
+                          <img src={slide.src} alt={slide.alt} />
+                      )}
                       <div className="carousel-caption">
                           {slide.title && <h2>{slide.title}</h2>}
                           {slide.subtitle && <p>{slide.subtitle}</p>}
@@ -619,15 +718,21 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
 function DefaultCarousel({ onCreateClick }){
     const [activeIndex, setActiveIndex] = useState(0);
     const slides = [
-        { src: 'https://images.unsplash.com/photo-1506765515384-028b60a970df?auto=format&fit=crop&w=1200&q=80', alt: 'Modern workspace' },
-        { src: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80', alt: 'Team meeting' },
-        { src: 'https://images.unsplash.com/photo-1481277542470-605612bd2d61?auto=format&fit=crop&w=1200&q=80', alt: 'Desk setup' },
+        { src: 'https://images.unsplash.com/photo-1506765515384-028b60a970df?auto=format&fit=crop&w=1200&q=80', alt: 'Modern workspace', mediaType: 'image' },
+        { src: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80', alt: 'Team meeting', mediaType: 'image' },
+        { src: 'https://images.unsplash.com/photo-1481277542470-605612bd2d61?auto=format&fit=crop&w=1200&q=80', alt: 'Desk setup', mediaType: 'image' },
     ];
 
     useEffect(() => {
-        const id = setInterval(() => setActiveIndex((i) => (i + 1) % slides.length), 5000);
-        return () => clearInterval(id);
-    }, [slides.length]);
+        if (slides.length === 0) {
+            return;
+        }
+
+        const activeSlide = slides[activeIndex] || slides[0];
+        const duration = activeSlide?.mediaType === 'video' ? 20000 : 15000;
+        const id = setTimeout(() => setActiveIndex((i) => (i + 1) % slides.length), duration);
+        return () => clearTimeout(id);
+    }, [activeIndex, slides.length]);
 
     const goTo = (i) => setActiveIndex(i);
 
@@ -635,7 +740,11 @@ function DefaultCarousel({ onCreateClick }){
         <div className="carousel">
             {slides.map((s, idx) => (
                 <div key={s.src} className={`carousel-item ${activeIndex === idx ? 'active' : ''}`}>
-                    <img src={s.src} alt={s.alt} />
+                    {s.mediaType === 'video' ? (
+                        <video playsInline autoPlay muted loop src={s.src} />
+                    ) : (
+                        <img src={s.src} alt={s.alt} />
+                    )}
                 </div>
             ))}
 

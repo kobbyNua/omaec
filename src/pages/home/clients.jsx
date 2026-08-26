@@ -183,8 +183,9 @@ function CreateClientModal({ isOpen, onClose }) {
       form.reset();
       if (data?.status === true) {
         setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+          onClose?.();
+          navigate('/');
+        }, 800);
       }
     } catch (error) {
       setStatus(error.message || "Unable to create client.");
@@ -313,8 +314,9 @@ function EditClientModal({ isOpen, onClose, client }) {
       setStatus(successMessage);
       if (data?.status === true) {
         setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+          onClose?.();
+          navigate('/');
+        }, 800);
       }
     } catch (error) {
       setStatus(error.message || "Unable to update client.");
