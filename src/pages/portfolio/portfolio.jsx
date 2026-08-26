@@ -243,6 +243,7 @@ const normalizeProjectGallery = (project) => {
     }
 
     const rawItems = [
+        project.media_url,
         project.media_files,
         project.media,
         project.gallery,
@@ -384,7 +385,7 @@ function PortfolioModal({ isOpen, onClose, title, submitLabel, initialValues = {
 
         if (selectedFiles.length > 0) {
             selectedFiles.forEach((file) => {
-                payload.append('media_files', file, file.name);
+                payload.append('media_url', file, file.name);
             });
             const primaryFile = selectedFiles.find((file) => file.type.startsWith('image/')) || selectedFiles[0];
             if (primaryFile) {
@@ -595,10 +596,11 @@ function Portoflio() {
                 const json = await response.json();
                 const items = extractResponseCollection(json, ['projects', 'portfolio', 'items']);
                 const validProjects = items
-                    .filter((item) => item && (item.project_name || item.slug || item.project_summary || item.project_details || item.cover_image_url || item.media_files || item.gallery || item.images || item.videos))
+                    .filter((item) => item && (item.project_name || item.slug || item.project_summary || item.project_details || item.cover_image_url || item.media_url || item.media_files || item.gallery || item.images || item.videos))
                     .map((item) => {
                         const groupGallery = normalizeProjectGallery(item);
                         const coverImage = groupGallery[0]?.file_url || getProjectImageValue(item);
+                        const mediaEntries = item.media_url || item.media_files || groupGallery;
 
                         return {
                             id: item.id,
@@ -611,7 +613,8 @@ function Portoflio() {
                             project_summary: item.project_summary || '',
                             project_details: item.project_details || '',
                             gallery: groupGallery,
-                            media_files: item.media_files || groupGallery,
+                            media_url: mediaEntries,
+                            media_files: mediaEntries,
                         };
                     });
 

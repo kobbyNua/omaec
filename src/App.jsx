@@ -273,6 +273,7 @@ function AppContent() {
                <Route path="/reset-password" element={<ResetPassword />} />
                <Route path="/admin" element={<AdminPage />} />
                <Route path="/user" element={<UserPage />} />
+               <Route path="*" element={<Home />} />
         </Routes>
   {/* footer */}
 

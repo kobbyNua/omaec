@@ -1,4 +1,4 @@
-Options Indexes
+Options -Indexes
 
 <IfModule mod_headers.c>
   <FilesMatch "\.(html|htm)$">
@@ -18,7 +18,10 @@ Options Indexes
   RewriteEngine On
   RewriteBase /
   RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_URI} !^/\.well-known/ [NC]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
+
+DirectoryIndex index.html
