@@ -120,22 +120,36 @@
                     $insertResults[] = $ok ? ['status' => true, 'record' => $record] : ['status' => false, 'record' => $record];
                 };
 
-                // If image and files were uploaded via multipart form with multiple files
-                if ($mediaType === 'image' && isset($_FILES['file_url']) && is_array($_FILES['file_url']) && is_array($_FILES['file_url']['name']) ) {
+                $multipartFiles = [];
+                if (isset($_FILES['file_url']) && is_array($_FILES['file_url']) && is_array($_FILES['file_url']['name'])) {
                     $count = count($_FILES['file_url']['name']);
                     for ($i = 0; $i < $count; $i++) {
-                        $single = [
-                            'name' => $_FILES['file_url']['name'][$i] ?? '',
+                        $fileName = $_FILES['file_url']['name'][$i] ?? '';
+                        if ($fileName === '') {
+                            continue;
+                        }
+
+                        $multipartFiles[] = [
+                            'name' => $fileName,
                             'type' => $_FILES['file_url']['type'][$i] ?? '',
                             'tmp_name' => $_FILES['file_url']['tmp_name'][$i] ?? '',
                             'error' => $_FILES['file_url']['error'][$i] ?? UPLOAD_ERR_NO_FILE,
                             'size' => $_FILES['file_url']['size'][$i] ?? 0,
                         ];
+                    }
+                } elseif (isset($_FILES['file_url']) && !empty($_FILES['file_url']['name'])) {
+                    $multipartFiles[] = $_FILES['file_url'];
+                } elseif (isset($data['file_url']) && is_array($data['file_url']) && isset($data['file_url']['tmp_name'])) {
+                    $multipartFiles[] = $data['file_url'];
+                }
 
-                        $uploadResult = uploadMediaFile($single, null, 'image');
+                // If files were uploaded via multipart form with multiple files
+                if (!empty($multipartFiles)) {
+                    $uploadType = in_array($mediaType, ['image', 'video'], true) ? $mediaType : null;
+                    foreach ($multipartFiles as $single) {
+                        $uploadResult = uploadMediaFile($single, null, $uploadType);
                         if (!$uploadResult['success']) {
-                            // Record the failure but continue with other files
-                            $insertResults[] = ['status' => false, 'message' => $uploadResult['message'], 'record' => ['title' => $data['title'] ?? null, 'file_url' => $single['name']]];
+                            $insertResults[] = ['status' => false, 'message' => $uploadResult['message'], 'record' => ['title' => $data['title'] ?? null, 'file_url' => $single['name'] ?? '']];
                             continue;
                         }
 
@@ -181,36 +195,29 @@
                 }
                 // Single-file or single-url handling
                 else {
-                    if ($mediaType === 'image') {
+                    if (in_array($mediaType, ['image', 'video'], true)) {
                         $uploadFile = null;
                         if (isset($_FILES['file_url']) && !empty($_FILES['file_url']['name'])) {
-                            // single file upload
                             $uploadFile = $_FILES['file_url'];
                         } elseif (isset($data['file_url']) && is_array($data['file_url']) && isset($data['file_url']['tmp_name'])) {
-                            // a single file-like array in body
                             $uploadFile = $data['file_url'];
                         }
 
                         if ($uploadFile !== null) {
-                            $uploadResult = uploadMediaFile($uploadFile, null, 'image');
+                            $uploadResult = uploadMediaFile($uploadFile, null, $mediaType);
                             if (!$uploadResult['success']) {
                                 $this->sendJson(['status'=>false,'message'=>$uploadResult['message']]);
                                 return;
                             }
                             $data['file_url'] = $this->toPublicPath($uploadResult['path']);
-                        } else if (!isset($data['file_url']) || trim((string)$data['file_url']) === '') {
-                            $this->sendJson(['status'=>false,'message'=>'Image media type requires file_url (upload) or file']);
-                            return;
-                        }
-                    } else if ($mediaType === 'video') {
-                        if (!isset($data['file_url']) || trim((string)$data['file_url']) === '') {
-                            $this->sendJson(['status'=>false,'message'=>'Video media type requires file_url']);
-                            return;
-                        }
-
-                        $fileUrl = trim((string)$data['file_url']);
-                        if (!$this->isValidUrl($fileUrl)) {
-                            $this->sendJson(['status'=>false,'message'=>'Invalid video URL. Must be a valid HTTP/HTTPS URL']);
+                        } elseif (isset($data['file_url']) && trim((string)$data['file_url']) !== '') {
+                            $fileUrl = trim((string)$data['file_url']);
+                            if ($mediaType === 'video' && !$this->isValidUrl($fileUrl)) {
+                                $this->sendJson(['status'=>false,'message'=>'Invalid video URL. Must be a valid HTTP/HTTPS URL']);
+                                return;
+                            }
+                        } else {
+                            $this->sendJson(['status'=>false,'message'=>ucfirst($mediaType) . ' media type requires file_url (upload) or a valid URL']);
                             return;
                         }
                     } else if ($mediaType === 'document') {

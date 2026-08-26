@@ -9,7 +9,18 @@
     */
 
    /*
-     CREATE TABLE home_banners( id INT(3) NOT NULL AUTO_INCREMENT PRIMARY KEY, tagline VARCHAR(100) DEFAULT NULL, title VARCHAR(255) NOT NULL, subTitle TEXT DEFAULT NULL, image_url VARCHAR(255) NOT NULL, banner_url VARCHAR(255) DEFAULT NULL, display_order INT DEFAULT 0, is_active TINYINT(1) DEFAULT 1, starT_at DATETIME DEFAULT NULL, end_at DATETIME DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UPDATE_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_active_order(is_active,display_order) );
+     CREATE TABLE home_banners(
+      id INT(3) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      tagline VARCHAR(100) DEFAULT NULL,
+      title VARCHAR(255) NOT NULL, 
+      subTitle TEXT DEFAULT NULL, 
+      image_url VARCHAR(255) NOT NULL,
+      media_type  ENUM('video','image') DEFAULT 'image',
+      banner_url VARCHAR(255) DEFAULT NULL, 
+      display_order INT DEFAULT 0,
+      is_active TINYINT(1) DEFAULT 1, starT_at DATETIME DEFAULT NULL, end_at DATETIME DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UPDATE_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_active_order(is_active,display_order) );
+
+  //ALTER TABLE home_banners ADD COLUMN media_type ENUM('video','image') DEFAULT 'image' AFTER image_url;
 
      CREATE TABLE home_services_header( 
         id INT(3) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -115,23 +126,42 @@
             echo json_encode($payload);
          }
 
+         private function resolveBannerUploadFile(array $data): ?array{
+            $fileKeys = ['image_url', 'video_url', 'media', 'file', 'banner'];
+
+            foreach ($fileKeys as $key) {
+                if (!empty($_FILES[$key]['name'])) {
+                    return $_FILES[$key];
+                }
+            }
+
+            foreach ($fileKeys as $key) {
+                if (!empty($data[$key]) && is_array($data[$key])) {
+                    return $data[$key];
+                }
+            }
+
+            return null;
+         }
+
          public function addBanner(array $data){
             if(!is_array($data)){
                     throw new InvalidArgumentException("Data must be an array");
               }
 
               try{
-                    if (!empty($_FILES['image_url']['name'])) {
-                        $uploadResult = uploadMediaFile($_FILES['image_url']);
+                    $bannerFile = $this->resolveBannerUploadFile($data);
 
-                        if (!$uploadResult['success']) {
-                            $this->sendJson(['status'=>false,'message'=>$uploadResult['message']]);
-                            return;
+                    if ($bannerFile !== null) {
+                        $mimeType = $bannerFile['type'] ?? '';
+                        $type = (stripos($mimeType, 'video/') === 0) ? 'video' : null;
+
+                        if (empty($type) && !empty($bannerFile['name'])) {
+                            $ext = strtolower(pathinfo($bannerFile['name'], PATHINFO_EXTENSION));
+                            $type = in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'webm'], true) ? 'video' : null;
                         }
 
-                        $data['image_url'] = $this->toPublicPath($uploadResult['path']);
-                    } elseif (!empty($data['image_url']) && is_array($data['image_url'])) {
-                        $uploadResult = uploadMediaFile($data['image_url']);
+                        $uploadResult = uploadMediaFile($bannerFile, null, $type);
 
                         if (!$uploadResult['success']) {
                             $this->sendJson(['status'=>false,'message'=>$uploadResult['message']]);
@@ -169,17 +199,18 @@
                  }
 
                  try{
-                        if (!empty($_FILES['image_url']['name'])) {
-                            $uploadResult = uploadMediaFile($_FILES['image_url']);
+                        $bannerFile = $this->resolveBannerUploadFile($data);
 
-                            if (!$uploadResult['success']) {
-                                $this->sendJson(['status'=>false,'message'=>$uploadResult['message']]);
-                                return;
+                        if ($bannerFile !== null) {
+                            $mimeType = $bannerFile['type'] ?? '';
+                            $type = (stripos($mimeType, 'video/') === 0) ? 'video' : null;
+
+                            if (empty($type) && !empty($bannerFile['name'])) {
+                                $ext = strtolower(pathinfo($bannerFile['name'], PATHINFO_EXTENSION));
+                                $type = in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'webm'], true) ? 'video' : null;
                             }
 
-                            $data['image_url'] = $this->toPublicPath($uploadResult['path']);
-                        } elseif (!empty($data['image_url']) && is_array($data['image_url'])) {
-                            $uploadResult = uploadMediaFile($data['image_url']);
+                            $uploadResult = uploadMediaFile($bannerFile, null, $type);
 
                             if (!$uploadResult['success']) {
                                 $this->sendJson(['status'=>false,'message'=>$uploadResult['message']]);

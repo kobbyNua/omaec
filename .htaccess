@@ -13,6 +13,11 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
 # 2. Prevent directory listings
 Options -Indexes
 
-# 3. Route all non-file requests to the api/index.php router
+# 3. Allow larger uploads for media/banner files
+php_value upload_max_filesize 50M
+php_value post_max_size 50M
+php_value memory_limit 128M
+
+# 4. Route all non-file requests to the api/index.php router
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ api/index.php [QSA,L]
