@@ -650,20 +650,6 @@ function ActiveCarousel({ onCreateClick, onEditClick, onDataStateChange }){
     };
 
             if (!hasData && !loading) {
-                // For regular users, silently fall back to the DefaultCarousel rendered by the parent.
-                // Show the debug information only to admins to avoid alarming normal visitors.
-                if (isAdminLoggedIn()) {
-                    return (
-                        <div className="carousel-debug" style={{ padding: 12, background: '#fff6', border: '1px solid #ccc' }}>
-                            <strong>No active carousel slides detected.</strong>
-                            <div style={{ marginTop: 8 }}>
-                                <em>Fetched response (truncated):</em>
-                                <pre style={{ maxHeight: 200, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{rawJson ? JSON.stringify(rawJson, null, 2) : (rawResponseText || 'no-json-captured')}</pre>
-                            </div>
-                        </div>
-                    );
-                }
-
                 return null;
             }
 

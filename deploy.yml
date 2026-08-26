@@ -21,6 +21,7 @@ jobs:
       run: |
         npm ci
         npm run build
+        cp .htaccess dist/.htaccess
 
     - name: Sync React Build to Root
       uses: SamKirsch/ftp-deploy-action@v4.3.5

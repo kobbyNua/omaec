@@ -559,15 +559,7 @@ function ActiveClients({ onCreateClick, onEditClick, onDataStateChange }) {
   }, [onDataStateChange]);
 
   if (!hasData && !loading) {
-    return (
-      <div className="clients-debug" style={{ padding: 12, background: '#fff6', border: '1px solid #ccc' }}>
-        <strong>No active clients detected.</strong>
-        <div style={{ marginTop: 8 }}>
-          <em>Fetched response (truncated):</em>
-          <pre style={{ maxHeight: 200, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{rawJson ? JSON.stringify(rawJson, null, 2) : (rawResponseText || 'no-json-captured')}</pre>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
