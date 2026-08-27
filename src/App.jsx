@@ -10,6 +10,7 @@ import MediaPhotoPage from './pages/media/media-photo';
 import MediaVideoPage from './pages/media/media-video';
 import Services  from './pages/services/services'; 
 import Portfolio from './pages/portfolio/portfolio.jsx';
+import PortfolioStoryPage from './pages/portfolio/portfolio-story.jsx';
 import Contact from './pages/contact/contact.jsx';
 import Blog from './pages/blog/blog.jsx';
 import LoginPage from './pages/login/login.jsx';
@@ -19,7 +20,7 @@ import ResetPassword from './pages/admin/reset-password';
 import './App.css';
 import { useState ,useEffect, useRef } from 'react';
 import './styles.css';
-import { BrowserRouter as BrowseRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as BrowseRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { subscribeToAuthChanges, logoutUser } from './Authentication/auth';
 
 const pageTitleMap = {
@@ -267,6 +268,9 @@ function AppContent() {
                <Route path="/events" element={<Events />}/>
                <Route path="/events/:slug" element={<Events />}/>
                <Route path="/portfolio" element={<Portfolio />}/>
+               <Route path="/portfolio/:slug" element={<Portfolio />} />
+               <Route path="/portfolio-story" element={<PortfolioStoryPage />} />
+               <Route path="/portfolio-story/:story" element={<PortfolioStoryPage />} />
                <Route path="/blog" element={<Blog />}/>
                <Route path="/contact" element={<Contact />}/>
                <Route path="/login" element={<LoginPage />} />

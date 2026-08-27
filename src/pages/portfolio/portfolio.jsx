@@ -489,24 +489,33 @@ function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit, canManageContent
                             </button>
                         </div>
                     )}
-                    <h2>Our Amazing Works</h2>
-                    <p>Explore our portfolio to see the latest projects and creative solutions we've delivered.</p>
+                    <div className="portfolio-section-header">
+                        <span className="portfolio-section-kicker">Art &amp; Design</span>
+                        <h2>Our Amazing Works</h2>
+                        <p>Explore our portfolio to see the latest projects and creative solutions we've delivered.</p>
+                    </div>
                     <div className="portfolio-gallery">
-                        {projects.map((project) => {
+                        {projects.map((project, index) => {
                             const projectGallery = normalizeProjectGallery(project);
                             const previewMedia = projectGallery[0] || { file_url: getProjectImageValue(project), alt_text: project.project_name };
+                            const storyLink = `/portfolio-story?story=${encodeURIComponent(project.slug || project.id)}`;
+                            const isFeatured = index === 0;
 
                             return (
-                                <div className="portfolio-item" key={project.id}>
-                                    <Link to={`/portfolio/${project.slug || project.id}`}>
+                                <div className={`portfolio-item ${isFeatured ? 'portfolio-item-featured' : ''}`} key={project.id}>
+                                    <Link to={storyLink}>
                                         {previewMedia.media_type === 'video' ? (
                                             <video src={previewMedia.file_url} muted playsInline preload="metadata" onError={(event) => { event.currentTarget.poster = DEFAULT_PORTFOLIO_IMAGE; }} />
                                         ) : (
                                             <img src={previewMedia.file_url} alt={project.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
                                         )}
                                         <div className="portfolio-overlay">
-                                            <h4>{project.project_name}</h4>
-                                            <p>{project.project_summary}</p>
+                                            <div className="portfolio-overlay-inner">
+                                                <span className="portfolio-category-tag">Story</span>
+                                                <h4>{project.project_name}</h4>
+                                                <p>{project.project_summary}</p>
+                                                <span className="portfolio-story-link">Read story</span>
+                                            </div>
                                         </div>
                                     </Link>
                                 </div>
@@ -549,6 +558,11 @@ function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit, canManag
                             <p><strong>Client:</strong> {project.client_name}</p>
                             <p><strong>Completed:</strong> {project.completion_date}</p>
                             <p><strong>Project URL:</strong> <a href={project.project_url} target="_blank" rel="noreferrer">{project.project_url}</a></p>
+                            <p>
+                                <Link to={`/portfolio-story?story=${encodeURIComponent(project.slug || project.id)}`} className="portfolio-story-link-inline">
+                                    Read story
+                                </Link>
+                            </p>
                             {canManageContent && (
                                 <button type="button" className="portfolio-edit-button" onClick={() => onOpenEdit(project)} aria-label={`Edit ${project.project_name}`}>
                                     <i className="fas fa-edit" aria-hidden="true" />
@@ -588,7 +602,14 @@ function Portoflio() {
     useEffect(() => {
         const loadProjects = async () => {
             try {
-                const response = await fetch(PORTFOLIO_API_URL);
+                const response = await fetch(PORTFOLIO_API_URL, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        Pragma: 'no-cache',
+                        Expires: '0',
+                    },
+                });
                 if (!response.ok) {
                     throw new Error('Unable to load projects.');
                 }

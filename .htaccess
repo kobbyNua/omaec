@@ -21,8 +21,12 @@ Options -Indexes
   RewriteCond %{REQUEST_URI} !^/\.well-known/ [NC]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+  RewriteRule ^(?!.*\.(?:css|js|png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot|map|xml|json|txt|pdf)$).* /index.html [L,QSA]
 </IfModule>
 
-DirectoryIndex index.html
+<IfModule mod_dir.c>
+  DirectoryIndex index.html
+</IfModule>
+
+ErrorDocument 404 /index.html
 

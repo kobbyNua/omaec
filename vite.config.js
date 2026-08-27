@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const buildStamp = Date.now();
   // Determine a valid proxy target. Prefer explicit VITE_PROXY_BACKEND, then VITE_APP_URL,
   // and finally a sensible default. If a relative path is provided, fall back to default host.
   let rawTarget = (env.VITE_PROXY_BACKEND || env.VITE_APP_URL || '').trim();
@@ -40,6 +41,15 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/',
     plugins: [react()],
+    build: {
+      rollupOptions: {
+        output: {
+          entryFileNames: `assets/[name]-${buildStamp}.js`,
+          chunkFileNames: `assets/[name]-${buildStamp}.js`,
+          assetFileNames: `assets/[name]-${buildStamp}[extname]`,
+        },
+      },
+    },
     server: {
       host: '0.0.0.0',
       port: 5173,
