@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Banner from '../banner/banner';
 import './blog.css';
 import Modal from './blogModal';
@@ -657,9 +658,9 @@ function ActiveBlog({ onCreateCategoryClick, onCreatePostClick, onEditClick, onD
                                     <h3>{post.title}</h3>
                                     <p>{post.excerpt || buildExcerpt(post.content)}</p>
                                     <p className="blog-post-author">By {post.name || 'Anonymous'}</p>
-                                    <button type="button" className="read-more" onClick={() => onReadMoreClick?.(post.slug || post.id)}>
+                                    <Link to={`/blog-story?story=${encodeURIComponent(post.slug || post.id)}`} className="read-more">
                                         Read More
-                                    </button>
+                                    </Link>
                                 </div>
                             </article>
                         ))}

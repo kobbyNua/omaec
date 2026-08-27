@@ -20,22 +20,47 @@ const slugify = (value) => String(value || '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '');
 
-const resolveProjectImage = (value) => {
-  if (!value) return DEFAULT_PORTFOLIO_IMAGE;
+const findFirstMediaCandidate = (value) => {
+  if (value === null || value === undefined) return null;
+
   if (Array.isArray(value)) {
     for (const item of value) {
-      const result = resolveProjectImage(item);
-      if (result && result !== DEFAULT_PORTFOLIO_IMAGE) return result;
+      const candidate = findFirstMediaCandidate(item);
+      if (candidate) return candidate;
     }
-    return DEFAULT_PORTFOLIO_IMAGE;
+    return null;
   }
+
   if (typeof value === 'object') {
-    const nested = value.url || value.path || value.src || value.file || value.image || value.image_url || value.cover_image_url || value.cover_image || value.photo_url || value.photo || value.public_url || value.full_url || value.location || value.name;
-    return resolveProjectImage(nested);
+    const preferredKeys = ['url', 'path', 'src', 'file', 'file_url', 'media_url', 'image', 'image_url', 'cover_image_url', 'cover_image', 'photo_url', 'photo', 'public_url', 'full_url', 'location', 'name', 'href', 'link', 'video_url', 'media'];
+
+    for (const key of preferredKeys) {
+      const nestedValue = value[key];
+      if (nestedValue !== null && nestedValue !== undefined && nestedValue !== '') {
+        const candidate = findFirstMediaCandidate(nestedValue);
+        if (candidate) return candidate;
+      }
+    }
+
+    for (const nestedValue of Object.values(value)) {
+      const candidate = findFirstMediaCandidate(nestedValue);
+      if (candidate) return candidate;
+    }
+
+    return null;
   }
-  let trimmed = String(value).trim();
-  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return DEFAULT_PORTFOLIO_IMAGE;
+
+  const trimmed = String(value).trim();
+  return trimmed && trimmed !== 'null' && trimmed !== 'undefined' ? trimmed : null;
+};
+
+const resolveProjectImage = (value) => {
+  const candidate = findFirstMediaCandidate(value);
+  if (!candidate) return DEFAULT_PORTFOLIO_IMAGE;
+
+  let trimmed = String(candidate).trim();
   if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  if (trimmed.includes('/var/www/html')) return `${window.location.origin}${trimmed.replace('/var/www/html', '')}`;
   if (trimmed.startsWith('/')) return `${window.location.origin}${trimmed}`;
   if (trimmed.startsWith('uploads/')) return `${window.location.origin}/${trimmed}`;
   return trimmed;
@@ -126,6 +151,8 @@ export default function PortfolioStoryPage() {
     return projects.find((project) => project.slug === storyKey || String(project.id) === storyKey) || projects[0] || null;
   }, [projects, storyKey]);
 
+  const recentProjects = useMemo(() => [...projects].reverse().slice(0, 4), [projects]);
+
   if (!storyProject && !loading) {
     return (
       <>
@@ -160,70 +187,93 @@ export default function PortfolioStoryPage() {
         {error && <p className="portfolio-story-status portfolio-story-error">{error}</p>}
 
         {storyProject && (
-          <article className="portfolio-story-card">
-            <header className="portfolio-story-header">
-              <div className="portfolio-story-kicker">{storyCategory}</div>
-              <h1>{storyProject.project_name}</h1>
-              <div className="portfolio-story-meta">
-                {storyProject.client_name && <span><strong>Client:</strong> {storyProject.client_name}</span>}
-                {storyProject.completion_date && <span><strong>Completed:</strong> {storyProject.completion_date}</span>}
-              </div>
-            </header>
-
-            <div className="portfolio-story-hero">
-              <div className="portfolio-story-hero-copy">
-                <p className="portfolio-story-deck">{storyIntro}</p>
-              </div>
-              <img src={storyProject.cover_image_url} alt={storyProject.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
-            </div>
-
-            <div className="portfolio-story-body">
-              <div className="portfolio-story-main">
-                <p>{storyProject.project_details}</p>
-                <p>
-                  Every great project begins with a clear idea and a thoughtful response to audience need. This commission was shaped to balance visual clarity, creative personality, and practical storytelling so the final work would feel both distinct and memorable.
-                </p>
-                <p>
-                  From early concepting to final delivery, the focus remained on details that elevate how people experience the brand: proportions, pacing, tone, and the emotional rhythm of the visual story.
-                </p>
-              </div>
-
-              <aside className="portfolio-story-aside">
-                <div className="portfolio-story-aside-box">
-                  <span className="portfolio-story-aside-label">Project focus</span>
-                  <h3>{storyProject.project_name}</h3>
-                  <p>{storyProject.project_summary || 'A design-led storytelling experience crafted to communicate value and identity with clarity.'}</p>
-                  {storyProject.project_url && storyProject.project_url !== '#' && (
-                    <a href={storyProject.project_url} target="_blank" rel="noreferrer">Visit project</a>
-                  )}
+          <div className="portfolio-story-layout">
+            <article className="portfolio-story-card">
+              <header className="portfolio-story-header">
+                <div className="portfolio-story-kicker">{storyCategory}</div>
+                <h1>{storyProject.project_name}</h1>
+                <div className="portfolio-story-meta">
+                  {storyProject.client_name && <span><strong>Client:</strong> {storyProject.client_name}</span>}
+                  {storyProject.completion_date && <span><strong>Completed:</strong> {storyProject.completion_date}</span>}
                 </div>
-              </aside>
-            </div>
+              </header>
 
-            {gallery.length > 0 && (
-              <section className="portfolio-story-gallery">
-                <div className="portfolio-story-gallery-header">
-                  <span>In focus</span>
-                  <h3>More from the project</h3>
+              <div className="portfolio-story-hero">
+                <div className="portfolio-story-hero-copy">
+                  <p className="portfolio-story-deck">{storyIntro}</p>
                 </div>
-                <div className="portfolio-story-gallery-grid">
-                  {gallery.map((item, index) => (
-                    <figure className="portfolio-story-gallery-item" key={`${storyProject.id}-${index}`}>
-                      {item.media_type === 'video' ? (
-                        <video src={item.file_url} controls playsInline preload="metadata" />
-                      ) : (
-                        <img src={item.file_url} alt={item.title} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
-                      )}
-                      <figcaption>
-                        <strong>{item.title}</strong>
-                        {item.description && <span>{item.description}</span>}
-                      </figcaption>
-                    </figure>
+                <img src={storyProject.cover_image_url} alt={storyProject.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
+              </div>
+
+              <div className="portfolio-story-body">
+                <div className="portfolio-story-main">
+                  <p>{storyProject.project_details}</p>
+                  <p>
+                    Every great project begins with a clear idea and a thoughtful response to audience need. This commission was shaped to balance visual clarity, creative personality, and practical storytelling so the final work would feel both distinct and memorable.
+                  </p>
+                  <p>
+                    From early concepting to final delivery, the focus remained on details that elevate how people experience the brand: proportions, pacing, tone, and the emotional rhythm of the visual story.
+                  </p>
+                </div>
+
+                <aside className="portfolio-story-aside">
+                  <div className="portfolio-story-aside-box">
+                    <span className="portfolio-story-aside-label">Project focus</span>
+                    <h3>{storyProject.project_name}</h3>
+                    <p>{storyProject.project_summary || 'A design-led storytelling experience crafted to communicate value and identity with clarity.'}</p>
+                    {storyProject.project_url && storyProject.project_url !== '#' && (
+                      <a href={storyProject.project_url} target="_blank" rel="noreferrer">Visit project</a>
+                    )}
+                  </div>
+                </aside>
+              </div>
+
+              {gallery.length > 0 && (
+                <section className="portfolio-story-gallery">
+                  <div className="portfolio-story-gallery-header">
+                    <span>In focus</span>
+                    <h3>More from the project</h3>
+                  </div>
+                  <div className="portfolio-story-gallery-grid">
+                    {gallery.map((item, index) => (
+                      <figure className="portfolio-story-gallery-item" key={`${storyProject.id}-${index}`}>
+                        {item.media_type === 'video' ? (
+                          <video src={item.file_url} controls playsInline preload="metadata" />
+                        ) : (
+                          <img src={item.file_url} alt={item.title} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
+                        )}
+                        <figcaption>
+                          <strong>{item.title}</strong>
+                          {item.description && <span>{item.description}</span>}
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </article>
+
+            <aside className="portfolio-story-sidebar">
+              <div className="portfolio-story-sidebar-box">
+                <div className="portfolio-story-sidebar-header">
+                  <span>Recent projects</span>
+                  <h3>Latest work</h3>
+                </div>
+                <div className="portfolio-story-recent-list">
+                  {recentProjects.map((project) => (
+                    <Link to={`/portfolio-story?story=${encodeURIComponent(project.slug || project.id)}`} className="portfolio-story-recent-item" key={project.id}>
+                      <img src={project.cover_image_url} alt={project.project_name} onError={(event) => { event.currentTarget.src = DEFAULT_PORTFOLIO_IMAGE; }} />
+                      <div className="portfolio-story-recent-meta">
+                        <strong>{project.project_name}</strong>
+                        <span>{project.client_name || 'Recent project'}</span>
+                        {project.project_summary && <small>{project.project_summary}</small>}
+                      </div>
+                    </Link>
                   ))}
                 </div>
-              </section>
-            )}
-          </article>
+              </div>
+            </aside>
+          </div>
         )}
       </div>
     </>

@@ -102,30 +102,55 @@ const toBackendValue = (value) => {
     return String(value);
 };
 
-const resolveProjectImage = (value) => {
+const findFirstMediaCandidate = (value) => {
     if (value === null || value === undefined) {
-        return DEFAULT_PORTFOLIO_IMAGE;
+        return null;
     }
 
     if (Array.isArray(value)) {
         for (const item of value) {
-            const resolved = resolveProjectImage(item);
-            if (resolved && resolved !== DEFAULT_PORTFOLIO_IMAGE) {
-                return resolved;
+            const candidate = findFirstMediaCandidate(item);
+            if (candidate) {
+                return candidate;
             }
         }
-        return DEFAULT_PORTFOLIO_IMAGE;
+        return null;
     }
 
     if (typeof value === 'object') {
-        const nestedValue = value.url || value.path || value.src || value.file || value.image || value.image_url || value.cover_image_url || value.cover_image || value.photo_url || value.photo || value.public_url || value.full_url || value.location || value.name;
-        return resolveProjectImage(nestedValue);
+        const preferredKeys = ['url', 'path', 'src', 'file', 'file_url', 'media_url', 'image', 'image_url', 'cover_image_url', 'cover_image', 'photo_url', 'photo', 'public_url', 'full_url', 'location', 'name', 'href', 'link', 'video_url', 'media'];
+
+        for (const key of preferredKeys) {
+            const nestedValue = value[key];
+            if (nestedValue !== null && nestedValue !== undefined && nestedValue !== '') {
+                const candidate = findFirstMediaCandidate(nestedValue);
+                if (candidate) {
+                    return candidate;
+                }
+            }
+        }
+
+        for (const nestedValue of Object.values(value)) {
+            const candidate = findFirstMediaCandidate(nestedValue);
+            if (candidate) {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
-    let trimmed = String(value).trim();
-    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') {
+    const trimmed = String(value).trim();
+    return trimmed && trimmed !== 'null' && trimmed !== 'undefined' ? trimmed : null;
+};
+
+const resolveProjectImage = (value) => {
+    const candidate = findFirstMediaCandidate(value);
+    if (!candidate) {
         return DEFAULT_PORTFOLIO_IMAGE;
     }
+
+    let trimmed = String(candidate).trim();
 
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
         try {
@@ -235,6 +260,19 @@ const normalizeMediaSource = (value) => {
         thumbnail_url: resolveProjectImage(trimmed),
         alt_text: 'Project media',
     }];
+};
+
+const shortenSummary = (value, maxLength = 80) => {
+    if (!value) {
+        return '';
+    }
+
+    const text = String(value).replace(/\s+/g, ' ').trim();
+    if (text.length <= maxLength) {
+        return text;
+    }
+
+    return `${text.slice(0, maxLength).trim()}...`;
 };
 
 const normalizeProjectGallery = (project) => {
@@ -490,19 +528,17 @@ function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit, canManageContent
                         </div>
                     )}
                     <div className="portfolio-section-header">
-                        <span className="portfolio-section-kicker">Art &amp; Design</span>
                         <h2>Our Amazing Works</h2>
                         <p>Explore our portfolio to see the latest projects and creative solutions we've delivered.</p>
                     </div>
                     <div className="portfolio-gallery">
-                        {projects.map((project, index) => {
+                        {[...projects].reverse().map((project) => {
                             const projectGallery = normalizeProjectGallery(project);
                             const previewMedia = projectGallery[0] || { file_url: getProjectImageValue(project), alt_text: project.project_name };
                             const storyLink = `/portfolio-story?story=${encodeURIComponent(project.slug || project.id)}`;
-                            const isFeatured = index === 0;
 
                             return (
-                                <div className={`portfolio-item ${isFeatured ? 'portfolio-item-featured' : ''}`} key={project.id}>
+                                <div className="portfolio-item" key={project.id}>
                                     <Link to={storyLink}>
                                         {previewMedia.media_type === 'video' ? (
                                             <video src={previewMedia.file_url} muted playsInline preload="metadata" onError={(event) => { event.currentTarget.poster = DEFAULT_PORTFOLIO_IMAGE; }} />
@@ -511,9 +547,8 @@ function DefaultPortfolio({ projects, onOpenCreate, onOpenEdit, canManageContent
                                         )}
                                         <div className="portfolio-overlay">
                                             <div className="portfolio-overlay-inner">
-                                                <span className="portfolio-category-tag">Story</span>
                                                 <h4>{project.project_name}</h4>
-                                                <p>{project.project_summary}</p>
+                                                <p>{shortenSummary(project.project_summary, 65)}</p>
                                                 <span className="portfolio-story-link">Read story</span>
                                             </div>
                                         </div>
@@ -571,7 +606,7 @@ function ActivePortfolio({ project, projects, onOpenCreate, onOpenEdit, canManag
                         </div>
                     </div>
                     <div className="portfolio-gallery portfolio-gallery-active portfolio-mixed-gallery">
-                        {projectGallery.map((item) => (
+                        {[...projectGallery].reverse().map((item) => (
                             <div className="portfolio-item portfolio-mixed-item" key={item.id}>
                                 {item.media_type === 'video' ? (
                                     <video src={item.file_url} controls playsInline preload="metadata" />

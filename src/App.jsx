@@ -13,6 +13,7 @@ import Portfolio from './pages/portfolio/portfolio.jsx';
 import PortfolioStoryPage from './pages/portfolio/portfolio-story.jsx';
 import Contact from './pages/contact/contact.jsx';
 import Blog from './pages/blog/blog.jsx';
+import BlogStoryPage from './pages/blog/blog-stroy.jsx';
 import LoginPage from './pages/login/login.jsx';
 import AdminPage from './pages/admin/admin.jsx';
 import UserPage from './pages/user/user.jsx';
@@ -272,6 +273,8 @@ function AppContent() {
                <Route path="/portfolio-story" element={<PortfolioStoryPage />} />
                <Route path="/portfolio-story/:story" element={<PortfolioStoryPage />} />
                <Route path="/blog" element={<Blog />}/>
+               <Route path="/blog-story" element={<BlogStoryPage />} />
+               <Route path="/blog-story/:story" element={<BlogStoryPage />} />
                <Route path="/contact" element={<Contact />}/>
                <Route path="/login" element={<LoginPage />} />
                <Route path="/reset-password" element={<ResetPassword />} />
