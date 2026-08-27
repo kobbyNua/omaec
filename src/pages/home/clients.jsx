@@ -47,30 +47,19 @@ const resolveClientImageUrl = (src) => {
 
 const getClientId = (item) => item?.id ?? item?.client_id ?? item?.clientId ?? item?._id ?? item?.uuid ?? null;
 
-const createClientSvgLogo = (label, bgColor, textColor = '#ffffff') => {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="240" height="120" viewBox="0 0 240 120">
-      <rect width="240" height="120" fill="${bgColor}"/>
-      <text x="50%" y="58%" text-anchor="middle" font-size="22" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="${textColor}" dominant-baseline="middle">${label}</text>
-    </svg>
-  `;
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-};
-
 const defaultClientLogos = [
-  { name: 'Google', src: createClientSvgLogo('Google', '#f5f5f5', '#1f1f1f') },
-  { name: 'Microsoft', src: createClientSvgLogo('Microsoft', '#e8f0fe', '#0f172a') },
-  { name: 'Apple', src: createClientSvgLogo('Apple', '#111111', '#ffffff') },
-  { name: 'Amazon', src: createClientSvgLogo('Amazon', '#f3f1e8', '#111111') },
-  { name: 'Meta', src: createClientSvgLogo('Meta', '#e9f6ff', '#0f172a') },
-  { name: 'Netflix', src: createClientSvgLogo('Netflix', '#111111', '#e50914') },
-  { name: 'Tesla', src: createClientSvgLogo('Tesla', '#fef2f2', '#b91c1c') },
-  { name: 'Coca-Cola', src: createClientSvgLogo('Coca-Cola', '#f7d7d7', '#9b1c1c') },
-  { name: 'Nike', src: createClientSvgLogo('Nike', '#f3f4f6', '#111111') },
-  { name: 'Samsung', src: createClientSvgLogo('Samsung', '#fef2f2', '#7f1d1d') },
-  { name: 'Adobe', src: createClientSvgLogo('Adobe', '#fbe9e9', '#d14d4d') },
-  { name: 'IBM', src: createClientSvgLogo('IBM', '#fef2f2', '#b91c1c') },
+  { name: 'Google', src: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg' },
+  { name: 'Microsoft', src: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg' },
+  { name: 'Apple', src: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg' },
+  { name: 'Amazon', src: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg' },
+  { name: 'Meta', src: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg' },
+  { name: 'Netflix', src: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg' },
+  { name: 'Tesla', src: 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg' },
+  { name: 'Coca-Cola', src: 'https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg' },
+  { name: 'Nike', src: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg' },
+  { name: 'Samsung', src: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Samsung_wordmark.svg' },
+  { name: 'Adobe', src: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Adobe_Systems_logo_and_wordmark.svg' },
+  { name: 'IBM', src: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg' },
 ];
 
 const isAdminLoggedIn = () => {
