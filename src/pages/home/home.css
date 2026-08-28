@@ -775,7 +775,7 @@ service-item p {
         padding: 1rem 0.85rem 1.5rem;
         text-align: center;
         overflow: hidden;
-        min-height: 360px;
+        min-height: 420px;
     }
 
     .service-icon {
