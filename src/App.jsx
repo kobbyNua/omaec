@@ -22,7 +22,7 @@ import ResetPassword from './pages/admin/reset-password';
 import './App.css';
 import { useState ,useEffect, useRef } from 'react';
 import './styles.css';
-import { HashRouter as BrowseRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { subscribeToAuthChanges, logoutUser } from './Authentication/auth';
 
 const pageTitleMap = {
@@ -530,9 +530,9 @@ function AppContent() {
 }
 function App() {
   return (
-    <BrowseRouter>
+    <BrowserRouter>
       <AppContent />
-    </BrowseRouter>
+    </BrowserRouter>
   );
 }
 export default App
