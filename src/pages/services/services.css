@@ -289,6 +289,7 @@
         margin-top: 0;
         margin-bottom: 1rem;
         border-radius: 0;
+        min-height: 240px;
     }
 
     .advertisement-service:last-child,

@@ -54,6 +54,63 @@ const resolveEventImageUrl = (value) => {
   return src;
 };
 
+const normalizeEndedVideoUrl = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  if (raw.startsWith('data:') || raw.startsWith('http://') || raw.startsWith('https://')) {
+    return raw;
+  }
+
+  if (raw.includes('/var/www/html')) {
+    return `${EVENT_BACKEND_ORIGIN}${raw.replace('/var/www/html', '')}`;
+  }
+
+  if (raw.startsWith('/')) {
+    return `${EVENT_BACKEND_ORIGIN}${raw}`;
+  }
+
+  return raw;
+};
+
+const buildEmbedVideoUrl = (value) => {
+  const url = normalizeEndedVideoUrl(value);
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const pathname = parsed.pathname || '';
+
+    if (host === 'youtu.be') {
+      const videoId = pathname.replace('/', '').split(/[?&]/)[0];
+      return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : null;
+    }
+
+    if (host.includes('youtube.com')) {
+      const videoId = parsed.searchParams.get('v');
+      if (videoId) {
+        const base = 'https://www.youtube-nocookie.com/embed/' + videoId;
+        const params = new URLSearchParams({ rel: '0', modestbranding: '1', playsinline: '1' });
+        return `${base}?${params.toString()}`;
+      }
+    }
+
+    if (host.includes('vimeo.com')) {
+      const videoId = pathname.split('/').filter(Boolean).pop();
+      if (videoId) {
+        const base = `https://player.vimeo.com/video/${videoId}`;
+        const params = new URLSearchParams({ title: '0', byline: '0', portrait: '0', autoplay: '0' });
+        return `${base}?${params.toString()}`;
+      }
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+};
+
 const defaultStory = `We believe every event should leave a lasting impression. This story captures the ideas, planning, atmosphere, and the experience we created so guests can feel the energy and purpose behind the occasion.`;
 
 function useQuery() {
@@ -90,7 +147,8 @@ export default function EventStoryPage() {
             event_date: item.event_date || '',
             registration_url: item.registration_url || '',
             live_stream_status: item.live_stream_status || 'upcoming',
-            live_stream_url: item.live_stream_url || '',
+            live_stream_url: item.live_stream_url || item.stream_url || '',
+            video_url: item.video_url || item.event_video_url || item.recording_url || item.video || item.recurring_video_url || item.event_recording_url || '',
             banner_image_url: resolveEventImageUrl(item.banner_image_url || item.image_url || item.image || ''),
           }));
 
@@ -121,6 +179,13 @@ export default function EventStoryPage() {
 
     return events.find((event) => event.slug === storyKey || String(event.id) === storyKey) || events[0] || null;
   }, [events, storyKey]);
+
+  const endedVideoUrl = useMemo(() => {
+    if (!storyEvent) return null;
+    if (storyEvent.live_stream_status !== 'ended') return null;
+    const candidate = storyEvent.video_url || storyEvent.live_stream_url;
+    return buildEmbedVideoUrl(candidate);
+  }, [storyEvent]);
 
   const recentEvents = useMemo(() => [...events].reverse().slice(0, 4), [events]);
 
@@ -167,9 +232,6 @@ export default function EventStoryPage() {
               </header>
 
               <div className="portfolio-story-hero">
-                <div className="portfolio-story-hero-copy">
-                  <p className="portfolio-story-deck">{storyEvent.description_body || defaultStory}</p>
-                </div>
                 <img src={storyEvent.banner_image_url} alt={storyEvent.title} onError={(event) => { event.currentTarget.src = DEFAULT_EVENT_IMAGE; }} />
               </div>
 
@@ -179,6 +241,26 @@ export default function EventStoryPage() {
                   <p>
                     The event experience is designed to create clarity, excitement, and memorable engagement for every guest. From the first welcome to the final interaction, the focus remains on crafting a polished experience that brings people together and communicates the message with confidence.
                   </p>
+
+                  {storyEvent.live_stream_status === 'ended' && endedVideoUrl ? (
+                    <div className="event-story-video-wrapper">
+                      <div className="event-story-video-frame">
+                        {/^https?:\/\//i.test(endedVideoUrl) && /\.(mp4|webm|ogg|mov)(\?|$)/i.test(endedVideoUrl) ? (
+                          <video src={endedVideoUrl} controls playsInline preload="metadata" />
+                        ) : (
+                          <iframe
+                            src={endedVideoUrl}
+                            title={`${storyEvent.title} recap`}
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                            allowFullScreen
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+
                   {storyEvent.live_stream_status === 'live' && storyEvent.live_stream_url ? (
                     <div className="event-story-live-frame">
                       <iframe

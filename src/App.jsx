@@ -40,6 +40,56 @@ const pageTitleMap = {
   '/user': 'User',
 };
 
+const SITE_URL = 'https://www.omaec.com';
+
+const pageMetaMap = {
+  '/': {
+    title: 'OMRON MEDIA | Home',
+    description: 'OMRON MEDIA creates standout media experiences, events, branding, and digital storytelling for ambitious brands.',
+    keywords: 'OMRON MEDIA, media production, digital storytelling, brand events, creative agency, content creation',
+  },
+  '/about': {
+    title: 'About OMRON MEDIA',
+    description: 'Learn about OMRON MEDIA, our creative approach, and the team behind the stories, campaigns, and experiences we build.',
+    keywords: 'about OMRON MEDIA, media company, creative team, digital storytelling, brand strategy',
+  },
+  '/services': {
+    title: 'Our Services | OMRON MEDIA',
+    description: 'Discover OMRON MEDIA services covering media production, event coverage, branding, digital content, and audience engagement.',
+    keywords: 'media services, event coverage, branding, content production, digital marketing, OMRON MEDIA',
+  },
+  '/media': {
+    title: 'Media Gallery | OMRON MEDIA',
+    description: 'Explore the media gallery from OMRON MEDIA, featuring production work, campaigns, and visual storytelling highlights.',
+    keywords: 'media gallery, video production, photo production, creative portfolio, OMRON MEDIA',
+  },
+  '/events': {
+    title: 'Events | OMRON MEDIA',
+    description: 'View upcoming, live, and recent events by OMRON MEDIA and experience the stories behind each production.',
+    keywords: 'events, live events, media production, event coverage, OMRON MEDIA',
+  },
+  '/portfolio': {
+    title: 'Portfolio | OMRON MEDIA',
+    description: 'Browse the work of OMRON MEDIA across campaigns, media production, event storytelling, and brand experiences.',
+    keywords: 'portfolio, case studies, brand work, creative work, OMRON MEDIA',
+  },
+  '/blog': {
+    title: 'Blog | OMRON MEDIA',
+    description: 'Read insights, stories, and creative ideas from OMRON MEDIA on branding, events, media, and storytelling.',
+    keywords: 'OMRON MEDIA blog, media insights, storytelling, branding ideas, event trends',
+  },
+  '/contact': {
+    title: 'Contact OMRON MEDIA',
+    description: 'Get in touch with OMRON MEDIA for media production, event support, branding, and creative collaboration.',
+    keywords: 'contact OMRON MEDIA, media inquiries, event production, creative collaboration',
+  },
+  '/login': {
+    title: 'Login | OMRON MEDIA',
+    description: 'Access the OMRON MEDIA member portal and account area securely.',
+    keywords: 'OMRON MEDIA login, member login',
+  },
+};
+
 function AppContent() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -118,22 +168,46 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const match = Object.entries(pageTitleMap).find(([path]) => {
-      if (path === location.pathname) return true;
-      if (path !== '/events' && path !== '/admin' && path !== '/user' && path !== '/login' && path !== '/reset-password' && path !== '/portfolio' && path !== '/blog' && path !== '/contact' && path !== '/about' && path !== '/services' && path !== '/media') {
-        return false;
+    const path = location.pathname;
+    const routeMeta = pageMetaMap[path] ||
+      (path.startsWith('/events') ? pageMetaMap['/events'] :
+      path.startsWith('/portfolio') ? pageMetaMap['/portfolio'] :
+      path.startsWith('/blog') ? pageMetaMap['/blog'] :
+      path.startsWith('/contact') ? pageMetaMap['/contact'] :
+      pageMetaMap['/']);
+
+    const pageName = pageTitleMap[path] || routeMeta.title;
+    const canonicalUrl = `${SITE_URL}${path === '/' ? '' : path}`;
+
+    document.title = routeMeta.title || `OMRON MEDIA | ${pageName}`;
+
+    const setMeta = (selector, content, attribute = 'content') => {
+      let tag = document.querySelector(selector);
+      if (!tag) {
+        tag = document.createElement('meta');
+        const key = selector.startsWith('meta[name') ? 'name' : 'property';
+        const name = selector.match(/(?:name|property)="([^"]+)"/)[1];
+        tag.setAttribute(key, name);
+        document.head.appendChild(tag);
       }
-      return false;
-    });
+      tag.setAttribute(attribute, content);
+    };
 
-    const pageName = pageTitleMap[location.pathname] ||
-      (location.pathname.startsWith('/events') ? 'Events' :
-      location.pathname.startsWith('/portfolio') ? 'Portfolio' :
-      location.pathname.startsWith('/blog') ? 'Blog' :
-      location.pathname.startsWith('/contact') ? 'Contact' :
-      'Home');
+    setMeta('meta[name="description"]', routeMeta.description);
+    setMeta('meta[name="keywords"]', routeMeta.keywords);
+    setMeta('meta[property="og:title"]', routeMeta.title, 'content');
+    setMeta('meta[property="og:description"]', routeMeta.description, 'content');
+    setMeta('meta[property="og:url"]', canonicalUrl, 'content');
+    setMeta('meta[name="twitter:title"]', routeMeta.title, 'content');
+    setMeta('meta[name="twitter:description"]', routeMeta.description, 'content');
 
-    document.title = `Omron Media | ${pageName}`;
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', canonicalUrl);
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -154,7 +228,7 @@ function AppContent() {
         <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
              <div className="container">
                   <div className="navbar-logo">
-                           <a href="/"><img src={isScrolled ? '/black_logo.png' : '/while_logo.png'} alt="My Website" /></a>
+                           <a href="/"><img src={isScrolled ? '/black_logo.png' : '/while_logo.png'} alt="OMRON MEDIA" /></a>
                   </div>
 
                   {/* Hamburger Menu Icon for Mobile */}
@@ -287,27 +361,58 @@ function AppContent() {
         </Routes>
   {/* footer */}
 
-    <div className="footer">
-        <div className="container">
-            <div className="footer-content">
-
-                           <ul>
-                              <li><a href="#"><i className="fab fa-facebook-f"></i></a></li>
-                              <li><a href="#"><i className="fab fa-twitter"></i></a></li>
-                              <li><a href="#"><i className="fab fa-instagram"></i></a></li>
-                              <li><a href="#"><i className="fab fa-linkedin-in"></i></a></li>
-                           </ul>
-
-                           <ul>
-                              <li><a href="#">Home</a></li>
-                              <li><a href="#">About</a></li>
-                              <li><a href="#">Services</a></li>
-                              <li><a href="#">Contact</a></li>
-                           </ul>
+    <footer className="footer">
+        <div className="container footer-grid">
+            <div className="footer-brand">
+                <div className="footer-logo">OMRON MEDIA</div>
+                <p>
+                    We design memorable brand experiences, digital storytelling, and media production that move audiences and grow impact.
+                </p>
+                <div className="footer-socials">
+                    <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><i className="fab fa-facebook-f"></i></a>
+                    <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter"><i className="fab fa-twitter"></i></a>
+                    <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram"><i className="fab fa-instagram"></i></a>
+                    <a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn"><i className="fab fa-linkedin-in"></i></a>
+                </div>
             </div>
-            <p>&copy; 2024 My Website. All rights reserved.</p>
+
+            <div className="footer-column">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><Link to="/">Home</Link></li>
+                    <li><Link to="/about">About</Link></li>
+                    <li><Link to="/services">Services</Link></li>
+                    <li><Link to="/portfolio">Portfolio</Link></li>
+                    <li><Link to="/contact">Contact</Link></li>
+                </ul>
+            </div>
+
+            <div className="footer-column">
+                <h3>Explore</h3>
+                <ul>
+                    <li><Link to="/media">Media</Link></li>
+                    <li><Link to="/events">Events</Link></li>
+                    <li><Link to="/blog">Blog</Link></li>
+                    <li><Link to="/login">Login</Link></li>
+                </ul>
+            </div>
+
+            <div className="footer-column">
+                <h3>Get In Touch</h3>
+                <ul className="footer-contact-list">
+                    <li><a href="mailto:hello@omronmedia.com">hello@omronmedia.com</a></li>
+                    <li><a href="tel:+233000000000">+233 000 000 000</a></li>
+                    <li>Accra, Ghana</li>
+                </ul>
+            </div>
         </div>
-    </div>
+
+        <div className="footer-bottom">
+            <div className="container">
+                <p>&copy; {new Date().getFullYear()} OMRON MEDIA. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 
   </>
   /*const [count, setCount] = useState(0)

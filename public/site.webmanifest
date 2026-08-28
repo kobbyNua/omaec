@@ -1,0 +1,17 @@
+{
+  "name": "OMRON MEDIA",
+  "short_name": "OMRON",
+  "description": "OMRON MEDIA creates media, events, branding, and digital storytelling experiences for modern brands.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/black_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

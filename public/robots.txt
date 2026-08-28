@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /reset-password
+Disallow: /login
 
-Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://www.omaec.com/sitemap.xml

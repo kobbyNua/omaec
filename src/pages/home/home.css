@@ -712,12 +712,13 @@ service-item p {
 
 .service-item {
     background: #fff;
-    padding: 3rem 2rem;
+    padding: 3rem 2rem 3.5rem;
     border-radius: 0;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     text-align: center;
     transition: all 0.3s ease;
     border: 1px solid #eee;
+    min-height: 260px;
 }
 
 .service-item:hover {
@@ -769,10 +770,12 @@ service-item p {
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: flex-start;
         margin-bottom: 1rem;
-        padding: 1rem 0.85rem;
+        padding: 1rem 0.85rem 1.5rem;
         text-align: center;
         overflow: hidden;
+        min-height: 360px;
     }
 
     .service-icon {

@@ -43,7 +43,7 @@ function Contact(){
                         <i className="fas fa-envelope"></i>
                         <div>
                             <h4>Email</h4>
-                            <p>info@mywebsite.com</p>
+                            <p>info@omronmedia.com</p>
                         </div>
                     </div>
                 </div>
