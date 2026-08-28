@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   // Determine a valid proxy target. Prefer explicit VITE_PROXY_BACKEND, then VITE_APP_URL,
   // and finally a sensible default. If a relative path is provided, fall back to default host.
   let rawTarget = (env.VITE_PROXY_BACKEND || env.VITE_APP_URL || '').trim();
-  let proxyTarget = rawTarget || 'http://10.86.231.169';
+  let proxyTarget = rawTarget || 'http://10.86.231.210';
   // If VITE_APP_URL is a relative path like '/media/api', proxy to localhost (port 80)
   if (rawTarget && rawTarget.startsWith('/')) {
     proxyTarget = 'http://localhost';

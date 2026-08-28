@@ -5,6 +5,7 @@ import heroImg from './assets/hero.png'*/
 import Home from './pages/home/home';
 import About from './pages/about/about';
 import Events  from './pages/events/events';
+import EventStoryPage from './pages/events/event-story.jsx';
 import Media from './pages/media/media';
 import MediaPhotoPage from './pages/media/media-photo';
 import MediaVideoPage from './pages/media/media-video';
@@ -268,6 +269,8 @@ function AppContent() {
                <Route path="/media-video" element={<MediaVideoPage />} />
                <Route path="/events" element={<Events />}/>
                <Route path="/events/:slug" element={<Events />}/>
+               <Route path="/events-story" element={<EventStoryPage />} />
+               <Route path="/events-story/:story" element={<EventStoryPage />} />
                <Route path="/portfolio" element={<Portfolio />}/>
                <Route path="/portfolio/:slug" element={<Portfolio />} />
                <Route path="/portfolio-story" element={<PortfolioStoryPage />} />

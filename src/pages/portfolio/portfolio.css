@@ -617,7 +617,7 @@
     .portfolio-item {
         width: 100%;
         margin: 0;
-        height: 260px;
+        height: 300px;
         grid-column: 1 / -1;
     }
 
@@ -631,6 +631,12 @@
     .portfolio-story-gallery {
         padding-left: 0.75rem;
         padding-right: 0.75rem;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) and (orientation: portrait) {
+    .portfolio-gallery {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -646,7 +652,7 @@
 
 @media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
     .portfolio-gallery {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .portfolio-story-layout {
@@ -656,68 +662,11 @@
 
 @media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
     .portfolio-gallery {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .portfolio-story-layout {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-    .portfolio-gallery {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 767px) {
-    .portfolio-content .container,
-    .portfolio-section-header,
-    .portfolio-gallery {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-    }
-
-    .portfolio-gallery {
-        grid-template-columns: 1fr;
-        gap: 0.8rem;
-    }
-
-    .portfolio-item {
-        width: 100%;
-        margin: 0;
-        height: 260px;
-        grid-column: 1 / -1;
-    }
-
-    .portfolio-story-header,
-    .portfolio-story-hero,
-    .portfolio-story-body,
-    .portfolio-story-gallery {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-    }
-
-    .portfolio-story-hero,
-    .portfolio-story-body,
-    .portfolio-story-gallery-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .portfolio-story-hero img {
-        height: 280px;
-    }
-
-    .portfolio-story-header h1 {
-        font-size: 2.4rem;
-    }
-
-    .portfolio-story-gallery-grid {
-        display: block;
-    }
-
-    .portfolio-story-gallery-item + .portfolio-story-gallery-item {
-        margin-top: 1rem;
     }
 }
 

@@ -110,7 +110,7 @@ const buildExcerpt = (value) => {
     if (!source) {
         return '';
     }
-    return source.length > 180 ? `${source.slice(0, 177)}...` : source;
+    return source.length > 95 ? `${source.slice(0, 92)}...` : source;
 };
 
 const resolveBlogImageUrl = (value) => {

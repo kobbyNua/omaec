@@ -160,6 +160,18 @@ const isValidUrl = (value) => {
     }
 };
 
+const getEventStatusLabel = (value) => {
+    if (value === "live") {
+        return "Live";
+    }
+
+    if (value === "ended") {
+        return "Ended";
+    }
+
+    return "Upcoming";
+};
+
 const toDateTimeLocalValue = (value) => {
     if (!value) {
         return "";
@@ -501,7 +513,6 @@ function EventModal({ isOpen, onClose, title, submitLabel, initialValues = {}, o
                                 value={formData.live_stream_status}
                                 onChange={handleFieldChange}
                             >
-                                <option value="live">Live</option>
                                 <option value="ended">Ended</option>
                                 <option value="upcoming">Upcoming</option>
                             </select>
@@ -578,17 +589,23 @@ function RecentEventsSection({ events }) {
                     <p>Check out our recent events coverage showcasing our expertise in event media services.</p>
                     <div className="recent-events-gallery">
                         {recentEvents.length > 0 ? (
-                            recentEvents.map((event) => (
-                                <div className="event-photo-item" key={event.id}>
-                                    <img
-                                        src={resolveEventImageUrl(event.banner_image_url) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
-                                        alt={event.title}
-                                    />
-                                    <div className="event-overlay">
-                                        <Link to={`/events/${event.slug || event.id}`}>{event.title}</Link>
-                                    </div>
-                                </div>
-                            ))
+                            recentEvents.map((event) => {
+                                const storyLink = `/events-story?story=${encodeURIComponent(event.slug || event.id)}`;
+                                return (
+                                    <Link className="event-photo-item" to={storyLink} key={event.id} aria-label={`Read more about ${event.title}`}>
+                                        <img
+                                            src={resolveEventImageUrl(event.banner_image_url) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
+                                            alt={event.title}
+                                        />
+                                        <div className="event-overlay">
+                                            <div className="event-overlay-inner">
+                                                <h4>{event.title}</h4>
+                                                <p>{event.location || "Event coverage"}</p>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })
                         ) : (
                             <p className="events-empty-state">No recent events yet.</p>
                         )}
@@ -600,9 +617,19 @@ function RecentEventsSection({ events }) {
 }
 
 function EventsPageShell({ featuredEvent, events, onCreateClick, onEditClick, variant = "default" }) {
-    const liveEvents = events.filter((event) => event.live_stream_status === "live");
-    const upcomingEvents = events.filter((event) => event.live_stream_status === "upcoming").slice(0, 2);
-    const previewEvent = featuredEvent || liveEvents[0] || upcomingEvents[0] || null;
+    const liveEvents = [...events]
+        .filter((event) => event.live_stream_status === "live")
+        .sort((a, b) => {
+            const aDate = new Date(a.event_date || 0).getTime();
+            const bDate = new Date(b.event_date || 0).getTime();
+            if (aDate !== bDate) return aDate - bDate;
+            return String(a.id).localeCompare(String(b.id));
+        });
+    const upcomingEvents = [...events]
+        .filter((event) => event.live_stream_status === "upcoming")
+        .reverse()
+        .slice(0, 6);
+    const previewEvent = featuredEvent || liveEvents[0] || null;
     const isActiveView = variant === "active";
     const canManageContent = isLoggedIn();
 
@@ -625,7 +652,7 @@ function EventsPageShell({ featuredEvent, events, onCreateClick, onEditClick, va
 
                     <div className="events">
                         <div className="live-events-streaming">
-                            <h3>{isActiveView ? "Event Highlights" : "Live Events & Streaming"}</h3>
+                            <h3>{isActiveView ? "Event Highlights" : "Live Streaming"}</h3>
                             {previewEvent ? (
                                 <div className="event-featured-card">
                                     {canManageContent && (
@@ -689,26 +716,34 @@ function EventsPageShell({ featuredEvent, events, onCreateClick, onEditClick, va
                         <div className="upcoming-events-list">
                             <h3>Upcoming Events</h3>
                             {upcomingEvents.length > 0 ? (
-                                upcomingEvents.map((event) => (
-                                    <div className="event-item" key={event.id}>
-                                        <Link to={`/events/${event.slug || event.id}`}>
-                                            <img
-                                                src={resolveEventImageUrl(event.banner_image_url) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
-                                                alt={event.title}
-                                            />
+                                upcomingEvents.map((event) => {
+                                    const storyLink = `/events-story?story=${encodeURIComponent(event.slug || event.id)}`;
+                                    const statusLabel = getEventStatusLabel(event.live_stream_status);
+                                    return (
+                                        <div className="event-item" key={event.id}>
+                                            <div className="event-item-image-wrap">
+                                                <img
+                                                    src={resolveEventImageUrl(event.banner_image_url) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
+                                                    alt={event.title}
+                                                />
+                                            </div>
                                             <div className="event-brief-info">
                                                 <h4>{event.title}</h4>
                                                 <p>Date: {formatEventDate(event.event_date)}</p>
                                                 <p>Location: {event.location || "To be announced"}</p>
+                                                <div className="event-item-actions">
+                                                    <Link to={storyLink} className="event-status-link">{statusLabel}</Link>
+                                                    <Link to={storyLink} className="event-read-more-link">Read more</Link>
+                                                </div>
                                             </div>
-                                        </Link>
-                                        {canManageContent && (
-                                            <button type="button" className="event-edit-button" onClick={() => onEditClick?.(event)} aria-label={`Edit ${event.title}`}>
-                                                <i className="fas fa-edit" aria-hidden="true" />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))
+                                            {canManageContent && (
+                                                <button type="button" className="event-edit-button" onClick={() => onEditClick?.(event)} aria-label={`Edit ${event.title}`}>
+                                                    <i className="fas fa-edit" aria-hidden="true" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })
                             ) : (
                                 <p>No upcoming events yet.</p>
                             )}
