@@ -5,7 +5,7 @@ use Kreait\Firebase\JWT\IdTokenVerifier;
 use Kreait\Firebase\JWT\Error\IdTokenVerificationFailed;
 
 $api = info();
-$projectId = $api['API_KEY'] ?? '';
+$projectId = $api['FIREBASE_PROJECT_ID'] ?? $api['API_KEY'] ?? '';
 $adminEmail = trim((string) ($api['ADMIN_EMAIL'] ?? ''));
 
 $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';

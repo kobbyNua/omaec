@@ -12,7 +12,8 @@
             "PORT"=>$_ENV['DB_PORT'],
             "PASWD"=>$_ENV['DB_PSWD'],
             "HOST"=>$_ENV['DB_HOST'],
-            "API_KEY"=>$_ENV['API_KEY'],
+            "FIREBASE_PROJECT_ID"=>$_ENV['FIREBASE_PROJECT_ID'] ?? $_ENV['API_KEY'] ?? '',
+            "API_KEY"=>$_ENV['API_KEY'] ?? '',
             "ADMIN_EMAIL"=>$_ENV['ADMIN_EMAIL'] ?? ''
          ];
 
