@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Modal from "./homeModal"; 
 import { auth } from "../../Authentication/auth";import { extractResponseCollection } from "../../utils/apiResponse.js";
-import { getBackendBase, getBackendOriginFrom } from "../../utils/backend.js";
+import { getBackendBase, getBackendOriginFrom, normalizeAssetUrl } from "../../utils/backend.js";
 //add carousel modal
 function AddCarouselModal(){
      
@@ -97,27 +97,7 @@ const getAuthorizationToken = async () => {
 };
 
 
-const resolveCarouselAssetUrl = (value) => {
-    let src = value || '';
-    if (!src) {
-        return '';
-    }
-
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-        return src;
-    }
-
-    if (src.includes('/var/www/html')) {
-        src = src.replace('/var/www/html', '');
-        return `${BACKEND_API_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/')) {
-        return `${BACKEND_API_ORIGIN}${src}`;
-    }
-
-    return src;
-};
+const resolveCarouselAssetUrl = (value) => normalizeAssetUrl(value);
 
 const isLikelyVideoAsset = (value) => {
     const raw = String(value || '').trim().toLowerCase();

@@ -5,7 +5,7 @@ import Modal from "./homeModal";
 import { auth } from "../../Authentication/auth.jsx";
 import { extractResponseCollection } from "../../utils/apiResponse.js";
 
-import { getBackendBase } from "../../utils/backend.js";
+import { getBackendBase, normalizeAssetUrl } from "../../utils/backend.js";
 
 const CLIENT_API_URL = (() => {
   const rawUrl = getBackendBase();
@@ -25,25 +25,7 @@ const CLIENT_API_ORIGIN = (() => {
   }
 })();
 
-const resolveClientImageUrl = (src) => {
-  if (!src) {
-    return "";
-  }
-
-  if (src.startsWith("http://") || src.startsWith("https://")) {
-    return src;
-  }
-
-  if (src.includes("/var/www/html")) {
-    return `${CLIENT_API_ORIGIN}${src.replace("/var/www/html", "")}`;
-  }
-
-  if (src.startsWith("/")) {
-    return `${CLIENT_API_ORIGIN}${src}`;
-  }
-
-  return src;
-};
+const resolveClientImageUrl = (src) => normalizeAssetUrl(src);
 
 const getClientId = (item) => item?.id ?? item?.client_id ?? item?.clientId ?? item?._id ?? item?.uuid ?? null;
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 import { auth } from '../../Authentication/auth';
 import Banner from '../banner/banner';
 import './portfolio.css';
@@ -144,44 +144,7 @@ const findFirstMediaCandidate = (value) => {
     return trimmed && trimmed !== 'null' && trimmed !== 'undefined' ? trimmed : null;
 };
 
-const resolveProjectImage = (value) => {
-    const candidate = findFirstMediaCandidate(value);
-    if (!candidate) {
-        return DEFAULT_PORTFOLIO_IMAGE;
-    }
-
-    let trimmed = String(candidate).trim();
-
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-            return resolveProjectImage(JSON.parse(trimmed));
-        } catch {
-            // fall through to the string handling below
-        }
-    }
-
-    if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        return trimmed;
-    }
-
-    if (trimmed.includes('/var/www/html')) {
-        return `${PORTFOLIO_API_ORIGIN}${trimmed.replace('/var/www/html', '')}`;
-    }
-
-    if (trimmed.startsWith('/')) {
-        return PORTFOLIO_API_ORIGIN ? `${PORTFOLIO_API_ORIGIN}${trimmed}` : trimmed;
-    }
-
-    if (trimmed.startsWith('uploads/')) {
-        return PORTFOLIO_API_ORIGIN ? `${PORTFOLIO_API_ORIGIN}/${trimmed}` : `/${trimmed}`;
-    }
-
-    if (/^([a-z0-9._-]+\.(png|jpe?g|gif|webp|svg|avif|bmp))$/i.test(trimmed)) {
-        return PORTFOLIO_API_ORIGIN ? `${PORTFOLIO_API_ORIGIN}/uploads/${trimmed}` : `/uploads/${trimmed}`;
-    }
-
-    return trimmed;
-};
+const resolveProjectImage = (value) => normalizeAssetUrl(value || DEFAULT_PORTFOLIO_IMAGE) || DEFAULT_PORTFOLIO_IMAGE;
 
 const getProjectImageValue = (item) => {
     const candidates = [

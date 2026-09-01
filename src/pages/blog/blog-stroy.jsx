@@ -37,31 +37,7 @@ const buildExcerpt = (value) => {
   return source.length > 180 ? `${source.slice(0, 177)}...` : source;
 };
 
-const resolveImageUrl = (value) => {
-  let src = String(value || '').trim();
-  if (!src) return '';
-
-  if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-    return src;
-  }
-
-  src = src.replace(/\\/g, '/');
-
-  if (src.includes('/var/www/html')) {
-    src = src.replace('/var/www/html', '');
-    return `${BLOG_BACKEND_ORIGIN}${src}`;
-  }
-
-  if (src.startsWith('/')) {
-    return `${BLOG_BACKEND_ORIGIN}${src}`;
-  }
-
-  if (src.startsWith('uploads/posts/') || src.startsWith('storage/') || src.startsWith('public/')) {
-    return `${BLOG_BACKEND_ORIGIN}/${src}`.replace(/\/{2,}/g, '/');
-  }
-
-  return src;
-};
+const resolveImageUrl = (value) => normalizeAssetUrl(value);
 
 const defaultStory = `We write to shape perspective, share knowledge, and make ideas easier to understand. This article brings together the thinking behind the work, the process behind the decision, and the value it creates for the people we serve.`;
 

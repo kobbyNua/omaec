@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Banner from '../banner/banner';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
 
 const PORTFOLIO_API_URL = (() => {
@@ -54,17 +54,7 @@ const findFirstMediaCandidate = (value) => {
   return trimmed && trimmed !== 'null' && trimmed !== 'undefined' ? trimmed : null;
 };
 
-const resolveProjectImage = (value) => {
-  const candidate = findFirstMediaCandidate(value);
-  if (!candidate) return DEFAULT_PORTFOLIO_IMAGE;
-
-  let trimmed = String(candidate).trim();
-  if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-  if (trimmed.includes('/var/www/html')) return `${window.location.origin}${trimmed.replace('/var/www/html', '')}`;
-  if (trimmed.startsWith('/')) return `${window.location.origin}${trimmed}`;
-  if (trimmed.startsWith('uploads/')) return `${window.location.origin}/${trimmed}`;
-  return trimmed;
-};
+const resolveProjectImage = (value) => normalizeAssetUrl(value || DEFAULT_PORTFOLIO_IMAGE) || DEFAULT_PORTFOLIO_IMAGE;
 
 const normalizeGallery = (project) => {
   const raw = [project?.media_url, project?.media_files, project?.media, project?.gallery, project?.images, project?.videos, project?.project_media, project?.items]

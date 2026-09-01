@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Modal from './mediaModal';
 import { Link } from 'react-router-dom';
 import { auth } from '../../Authentication/auth.jsx';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, getBackendOriginFrom, normalizeAssetUrl } from '../../utils/backend.js';
 
 const MEDIA_API_BASE_URL = (() => {
     const rawUrl = getBackendBase();
@@ -30,8 +30,6 @@ const MEDIA_API_URL = (() => {
     const base = rawUrl.replace(/\/+$/g, '');
     return `${base}/media`;
 })();
-
-import { getBackendOriginFrom } from '../../utils/backend.js';
 
 const MEDIA_BACKEND_ORIGIN = (() => {
     const rawUrl = getBackendBase();
@@ -133,28 +131,7 @@ const getAuthorizationToken = async () => {
     return '';
 };
 
-const resolveMediaUrl = (value) => {
-    let src = value || '';
-    if (!src) {
-        return '';
-    }
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-        return src;
-    }
-
-    // If server stored absolute path like /var/www/html/..., strip server root
-    // and prefix with backend origin (same logic used in carousel).
-    if (src.includes('/var/www/html')) {
-        src = src.replace('/var/www/html', '');
-        return `${MEDIA_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/')) {
-        return `${MEDIA_BACKEND_ORIGIN}${src}`;
-    }
-
-    return src;
-};
+const resolveMediaUrl = (value) => normalizeAssetUrl(value);
 
 const slugify = (value) => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 

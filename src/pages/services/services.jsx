@@ -5,7 +5,7 @@ import './services.css';
 import Modal from './servicesModal';
 import { auth } from '../../Authentication/auth.jsx';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 
 const SERVICE_API_BASE_URL = (() => {
     const rawUrl = getBackendBase();
@@ -87,27 +87,7 @@ const getAuthorizationToken = async () => {
     return '';
 };
 
-const resolveServiceImageUrl = (value) => {
-    let src = value || '';
-    if (!src) {
-        return '';
-    }
-
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-        return src;
-    }
-
-    if (src.includes('/var/www/html')) {
-        src = src.replace('/var/www/html', '');
-        return `${SERVICE_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/')) {
-        return `${SERVICE_BACKEND_ORIGIN}${src}`;
-    }
-
-    return src;
-};
+const resolveServiceImageUrl = (value) => normalizeAssetUrl(value);
 
 const slugify = (value) => {
     return String(value || '')

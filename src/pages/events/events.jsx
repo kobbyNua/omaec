@@ -4,7 +4,7 @@ import "./events.css";
 import Banner from "../banner/banner";
 import Modal from "./eventModal";
 import { auth } from "../../Authentication/auth.jsx";import { extractResponseCollection } from '../../utils/apiResponse.js';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 const EVENT_API_BASE_URL = (() => {
     const rawUrl = getBackendBase();
     if (!rawUrl) {
@@ -95,29 +95,7 @@ const slugify = (value) => {
         .replace(/^-+|-+$/g, "");
 };
 
-const resolveEventImageUrl = (value) => {
-    let src = value || "";
-    if (!src) {
-        return "";
-    }
-
-    if (src.startsWith("data:") || src.startsWith("http://") || src.startsWith("https://")) {
-        return src;
-    }
-
-    // If server-stored absolute path like /var/www/html/..., strip server root
-    // and prefix with backend origin so the browser can fetch it.
-    if (src.includes("/var/www/html")) {
-        src = src.replace("/var/www/html", "");
-        return `${EVENT_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith("/")) {
-        return `${EVENT_BACKEND_ORIGIN}${src}`;
-    }
-
-    return src;
-};
+const resolveEventImageUrl = (value) => normalizeAssetUrl(value || "") || "";
 
 const canRenderStreamEmbed = (value) => {
     if (!value) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getBackendBase, getBackendOriginFrom } from '../../utils/backend.js';
+import { getBackendBase, getBackendOriginFrom, normalizeAssetUrl } from '../../utils/backend.js';
 import Banner from '../banner/banner.jsx';
 import { MediaModal } from './media.jsx';
 
@@ -17,23 +17,7 @@ const MEDIA_BACKEND_ORIGIN = (() => {
     return getBackendOriginFrom(rawUrl);
 })();
 
-const resolveMediaUrl = (value) => {
-    let src = value || '';
-    if (!src) return '';
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
-
-    if (src.includes('/var/www/html')) {
-        src = src.replace('/var/www/html', '');
-        return `${MEDIA_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/media/uploads')) {
-        return `${MEDIA_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/')) return `${MEDIA_BACKEND_ORIGIN}${src}`;
-    return src;
-};
+const resolveMediaUrl = (value) => normalizeAssetUrl(value);
 
 const slugify = (value) => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 

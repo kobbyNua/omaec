@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import Modal from './aboutModal';
 import { auth } from '../../Authentication/auth.jsx';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 
 const TEAM_API_BASE_URL = (() => {
     const rawUrl = getBackendBase();
@@ -85,27 +85,7 @@ const getAuthorizationToken = async () => {
     return '';
 };
 
-const resolveTeamImageUrl = (value) => {
-    let src = value || '';
-    if (!src) return '';
-
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-        return src;
-    }
-
-    // If server stored absolute paths like /var/www/html/..., strip the server root
-    // and prefix with the backend origin (same approach as carousel).
-    if (src.includes('/var/www/html')) {
-        src = src.replace('/var/www/html', '');
-        return `${TEAM_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/')) {
-        return `${TEAM_BACKEND_ORIGIN}${src}`;
-    }
-
-    return src;
-};
+const resolveTeamImageUrl = (value) => normalizeAssetUrl(value);
 
 const isValidUrl = (value) => {
     const trimmed = value?.trim();

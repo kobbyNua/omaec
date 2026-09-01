@@ -229,16 +229,32 @@ function ActiveAchievement({ onCreateClick, onEditClick, onDataStateChange, onLo
           addLog('JSON candidates count: ' + candidates.length);
           candidates.forEach((c, idx) => addLog({ candidate: idx, extracted: extractResponseCollection(c, ['achievements','home_achievements','data']) }));
 
+          const isAchievementLike = (item) => {
+            if (!item || typeof item !== 'object') return false;
+
+            const hasCountLike = [item.figures, item.count, item.value].some((value) => {
+              if (value === null || value === undefined || value === '') return false;
+              if (typeof value === 'number') return Number.isFinite(value);
+              const numeric = Number(String(value).trim());
+              return String(value).trim() !== '' && Number.isFinite(numeric);
+            });
+
+            const hasIconLike = [item.icon_type, item.icon_value, item.icon].some((value) => typeof value === 'string' && value.trim() !== '');
+            const hasAchievementNameLike = [item.archivement_name, item.achievement_name].some((value) => typeof value === 'string' && value.trim() !== '');
+
+            return hasCountLike || hasIconLike || hasAchievementNameLike;
+          };
+
           const scoreCandidateForAchievement = (c) => {
             const arr = extractResponseCollection(c, ['achievements','home_achievements','data']);
             if (!Array.isArray(arr) || arr.length === 0) return 0;
             const sample = arr[0] || {};
             let score = 0;
-            if (sample.figures || sample.id) score += 3;
-            if (sample.archivement_name || sample.achievement_name || sample.title) score += 2;
-            if (sample.icon_type || sample.icon_value) score += 1;
-            // deprioritize image/carousel-like
-            if (sample.image_url || sample.photo_url || sample.photo) score -= 3;
+            if (sample.figures || sample.count || sample.value) score += 5;
+            if (sample.icon_type || sample.icon_value || sample.icon) score += 3;
+            if (sample.archivement_name || sample.achievement_name) score += 4;
+            // deprioritize carousel/media-like payloads that are not achievements
+            if (sample.image_url || sample.photo_url || sample.photo || sample.subtitle || sample.media_type) score -= 4;
             return score;
           };
 
@@ -265,8 +281,8 @@ function ActiveAchievement({ onCreateClick, onEditClick, onDataStateChange, onLo
           const altSource = Array.isArray(selected) ? selected : (selected?.data || []);
           const sourceArray = items.length ? items : (Array.isArray(altSource) ? altSource : []);
 
-          // Accept any object entries as achievements — some backends use different keys
-          const valid = sourceArray.filter((item) => item && typeof item === 'object');
+          // Only accept payloads that look like actual achievement records.
+          const valid = sourceArray.filter((item) => isAchievementLike(item));
 
           const normalizedAchievements = valid.map((item) => ({
             id: item.id || item.ID || null,

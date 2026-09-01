@@ -5,7 +5,7 @@ import './blog.css';
 import Modal from './blogModal';
 import { auth } from '../../Authentication/auth.jsx';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 
 const BLOG_API_BASE_URL = (() => {
     const rawUrl = getBackendBase();
@@ -113,33 +113,7 @@ const buildExcerpt = (value) => {
     return source.length > 95 ? `${source.slice(0, 92)}...` : source;
 };
 
-const resolveBlogImageUrl = (value) => {
-    let src = String(value || '').trim();
-    if (!src) {
-        return '';
-    }
-
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-        return src;
-    }
-
-    src = src.replace(/\\/g, '/');
-    // Normalize server absolute paths and prefix with backend origin so browser can fetch them
-    if (src.includes('/var/www/html')) {
-        src = src.replace('/var/www/html', '');
-        return `${BLOG_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('/')) {
-        return `${BLOG_BACKEND_ORIGIN}${src}`;
-    }
-
-    if (src.startsWith('uploads/posts/') || src.startsWith('storage/') || src.startsWith('public/')) {
-        return `${BLOG_BACKEND_ORIGIN}/${src}`.replace(/\/{2,}/g, '/');
-    }
-
-    return src;
-};
+const resolveBlogImageUrl = (value) => normalizeAssetUrl(value);
 
 function CategoryModal({ isOpen, onClose, title, submitLabel, initialValues = {}, onSuccess }) {
     const [formData, setFormData] = useState({ name: '', slug: '' });

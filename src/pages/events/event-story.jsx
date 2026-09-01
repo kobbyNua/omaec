@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './events.css';
 import Banner from '../banner/banner';
-import { getBackendBase } from '../../utils/backend.js';
+import { getBackendBase, normalizeAssetUrl } from '../../utils/backend.js';
 import { extractResponseCollection } from '../../utils/apiResponse.js';
 
 const EVENT_API_URL = (() => {
@@ -34,44 +34,9 @@ const slugify = (value) => String(value || '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '');
 
-const resolveEventImageUrl = (value) => {
-  let src = String(value || '').trim();
-  if (!src) return DEFAULT_EVENT_IMAGE;
+const resolveEventImageUrl = (value) => normalizeAssetUrl(value || DEFAULT_EVENT_IMAGE) || DEFAULT_EVENT_IMAGE;
 
-  if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
-    return src;
-  }
-
-  if (src.includes('/var/www/html')) {
-    src = src.replace('/var/www/html', '');
-    return `${EVENT_BACKEND_ORIGIN}${src}`;
-  }
-
-  if (src.startsWith('/')) {
-    return `${EVENT_BACKEND_ORIGIN}${src}`;
-  }
-
-  return src;
-};
-
-const normalizeEndedVideoUrl = (value) => {
-  const raw = String(value || '').trim();
-  if (!raw) return null;
-
-  if (raw.startsWith('data:') || raw.startsWith('http://') || raw.startsWith('https://')) {
-    return raw;
-  }
-
-  if (raw.includes('/var/www/html')) {
-    return `${EVENT_BACKEND_ORIGIN}${raw.replace('/var/www/html', '')}`;
-  }
-
-  if (raw.startsWith('/')) {
-    return `${EVENT_BACKEND_ORIGIN}${raw}`;
-  }
-
-  return raw;
-};
+const normalizeEndedVideoUrl = (value) => normalizeAssetUrl(value) || null;
 
 const buildEmbedVideoUrl = (value) => {
   const url = normalizeEndedVideoUrl(value);
