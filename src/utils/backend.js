@@ -37,25 +37,41 @@ export function normalizeAssetUrl(value) {
 
   const backendBase = getBackendBase();
   const backendOrigin = backendBase ? getBackendOriginFrom(backendBase) : window.location.origin;
+  const backendLooksLikeMediaRoot = /api\.omaec\.com/i.test(backendOrigin) || /\bmedia\b/i.test(String(backendBase || ''));
+
+  const normalizeRelativePath = (path) => {
+    let normalized = String(path || '').replace(/\/+/g, '/').replace(/\?.*$/, '');
+
+    if (!normalized) {
+      return '/';
+    }
+
+    if (backendLooksLikeMediaRoot) {
+      normalized = normalized.replace(/^\/public_html(?=\/)/i, '');
+      normalized = normalized.replace(/^\/media(?=\/)/i, '');
+    }
+
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+  };
 
   const hasServerRootPath = src.includes('/var/www/html') || src.includes('/public_html') || /(?:\/home\d*\/.*\/public_html|\/home\d*\/.*\/html)/i.test(src);
 
   if (hasServerRootPath) {
     const assetMatch = src.match(/(?:\/media|\/uploads|\/storage|\/public)[^?]*/i);
     const assetPath = assetMatch ? assetMatch[0] : src.replace(/^.*?(?:\/media|\/uploads|\/storage|\/public)/i, '');
-    return `${backendOrigin}${assetPath.startsWith('/') ? assetPath : `/${assetPath}`}`;
+    return `${backendOrigin}${normalizeRelativePath(assetPath)}`;
   }
 
   if (src.startsWith('/media/uploads') || src.startsWith('/uploads') || src.startsWith('/media/') || src.startsWith('/storage/') || src.startsWith('/public/')) {
-    return `${backendOrigin}${src}`;
+    return `${backendOrigin}${normalizeRelativePath(src)}`;
   }
 
   if (src.startsWith('/')) {
-    return `${backendOrigin}${src}`;
+    return `${backendOrigin}${normalizeRelativePath(src)}`;
   }
 
   if (src.startsWith('uploads/') || src.startsWith('media/uploads') || src.startsWith('storage/')) {
-    return `${backendOrigin}/${src.replace(/^\/+/, '')}`;
+    return `${backendOrigin}${normalizeRelativePath(src)}`;
   }
 
   return src;
