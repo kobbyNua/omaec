@@ -230,61 +230,53 @@
          }
          
 
-         public function getBannerDetails(array $data){
-                 if(!is_array($data)){
-                     throw new Exception('invalid data');
-                 }
-                 try{
-                      $get_details = $this->db->query('SELECT * FROM home_banners WHERE id=:id')->bind($data)->findAll();
-                      $formattedBanners = array_map([$this, 'formatBannerForResponse'], $get_details);
-                      $this->sendJson(['status'=>true,'data'=>$formattedBanners]);
-                 }
-                 catch(Exception $e){
-                      $this->sendJson(['status'=>false,'message'=>"invalid data"]);
-                      error_log(json_encode(['status'=>false,'message'=>$e->getMessage()]));          
-                 }
-                 
-         }
+        public function getBannerDetails(array $data){
+                if(!is_array($data)){
+                    throw new Exception('invalid data');
+                }
+                try{
+                     $get_details = $this->db->query('SELECT * FROM home_banners WHERE id=:id')->bind($data)->findAll();
+                     $formattedBanners = array_map([$this, 'formatBannerForResponse'], $get_details);
+                     $this->sendJson(['status'=>true,'data'=>$formattedBanners]);
+                }
+                catch(Exception $e){
+                     $this->sendJson(['status'=>false,'message'=>"invalid data"]);
+                     error_log(json_encode(['status'=>false,'message'=>$e->getMessage()]));          
+                }
+                
+        }
 
-         public function addService(array $data){
-            
+        public function addService(array $data){
+            if (!is_array($data)) {
+                $this->sendJson(['status' => false, 'message' => 'Data must be an array']);
+                return;
+            }
 
-            if(!is_array($data)){
-                    throw new InvalidArgumentException("Data must be an array");
-              }
-              try{
-                    
-                               
-                    $add_banner=$this->db->insert('Home_services',$data);
+            $requiredFields = ['title', 'short_description'];
+            foreach ($requiredFields as $field) {
+                if (!array_key_exists($field, $data) || trim((string)$data[$field]) === '') {
+                    $this->sendJson(['status' => false, 'message' => 'Missing required field: ' . $field]);
+                    return;
+                }
+            }
 
-                    $results=($add_banner) ? ['status'=>true,'message'=>"services added successfully"] : ['status'=>false,'message'=>"Failed to add banner"];
-                     echo json_encode($results);
-                     //echo PHP_EOL;
-                    /**/
-              }
-              catch(Exception $e){
-                    echo json_encode(['status'=>false,'message'=>'invalid data']);
-                    error_log(json_encode(['status'=>false,'message'=>$e->getMessage()]));
-                    //echo PHP_EOL;
-              }
+            foreach ($data as $key => $value) {
+                if (is_array($value)) {
+                    $this->sendJson(['status' => false, 'message' => 'Invalid value for field: ' . $key]);
+                    return;
+                }
+            }
 
-              foreach($data as $key=>$value){
-                    if(!is_array($value)){
-                         throw new InvalidArgumentException("Invalid key: " . $key);
-                    }
-                    // Additional validation for values can be added here
-               }
-               try{
-                    $inserted = $this->db->insert('Home_services',$data);
-                    $results=($inserted) ? ['status'=>true,'message'=>"Banner added successfully"] : ['status'=>false,'message'=>"Failed to add banner"];
-                     echo json_encode($results);
-               }catch(\Throwable $e){
-                     echo json_encode(['status'=>false,'message'=>"invalid data"]);
-                     error_log(json_encode(['status'=>false,'message'=>$e->getMessage()]));
-               }
+            try {
+                $inserted = $this->db->insert('Home_services', $data);
+                $results = $inserted ? ['status' => true, 'message' => 'Service added successfully'] : ['status' => false, 'message' => 'Failed to add service'];
+                $this->sendJson($results);
+            } catch (\Throwable $e) {
+                error_log(json_encode(['status' => false, 'message' => $e->getMessage()]));
+                $this->sendJson(['status' => false, 'message' => 'invalid data']);
+            }
 
-
-         }
+        }
          public function viewService(){
                   $fetch_all = $this->db->execute('SELECT * FROM Home_services');
                   echo json_encode(['status'=>true,'data'=>$fetch_all->fetchAll()]);

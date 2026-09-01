@@ -22,17 +22,40 @@ class Mailer
     {
         try {
             // Server settings
-            $this->mail->SMTPDebug = 0;
+            $this->mail->SMTPDebug = isset($_ENV['MAIL_DEBUG']) ? (int) $_ENV['MAIL_DEBUG'] : 0;
             $this->mail->isSMTP();
             $this->mail->Host = $_ENV['MAIL_HOST'] ?? 'smtp.gmail.com';
             $this->mail->SMTPAuth = true;
-            $this->mail->Username = $_ENV['MAIL_USERNAME'];
-            $this->mail->Password = $_ENV['MAIL_PASSWORD'];
-            $this->mail->SMTPSecure = $_ENV['MAIL_ENCRYPTION'] ?? PHPMailer::ENCRYPTION_STARTTLS;
-            $this->mail->Port = $_ENV['MAIL_PORT'] ?? 587;
+            $this->mail->Username = $_ENV['MAIL_USERNAME'] ?? '';
+            $this->mail->Password = $_ENV['MAIL_PASSWORD'] ?? '';
 
-            // Set from address
-            $this->mail->setFrom($_ENV['MAIL_FROM_ADDRESS'], $_ENV['MAIL_FROM_NAME'] ?? 'Media App');
+            if (empty($this->mail->Username) || empty($this->mail->Password)) {
+                throw new Exception('Mailer username or password not configured');
+            }
+
+            // Map encryption string to PHPMailer constants
+            $enc = strtolower(trim($_ENV['MAIL_ENCRYPTION'] ?? 'tls'));
+            if ($enc === 'ssl' || $enc === 'smtps') {
+                $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            } else {
+                $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            }
+
+            $this->mail->Port = isset($_ENV['MAIL_PORT']) ? (int) $_ENV['MAIL_PORT'] : ($this->mail->SMTPSecure === PHPMailer::ENCRYPTION_SMTPS ? 465 : 587);
+
+            // Optional: allow self-signed certs for debugging
+            if (!empty($_ENV['MAIL_ALLOW_SELF_SIGNED']) && in_array(strtolower($_ENV['MAIL_ALLOW_SELF_SIGNED']), ['1', 'true', 'yes'], true)) {
+                $this->mail->SMTPOptions = [
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                    ],
+                ];
+            }
+
+            // Set from address (fallback to username)
+            $this->mail->setFrom($_ENV['MAIL_FROM_ADDRESS'] ?? $this->mail->Username, $_ENV['MAIL_FROM_NAME'] ?? 'Media App');
         } catch (Exception $e) {
             error_log('Mailer setup failed: ' . $e->getMessage());
             throw new Exception('Mailer configuration error');
