@@ -219,10 +219,14 @@ function AppContent() {
     window.location.href = '/login';
   };
 
-  
- 
-
-
+  const isAdminUser = Boolean(
+    user && (
+      window.localStorage.getItem('admin-auth') === 'true' ||
+      window.localStorage.getItem('admin-auth') === 'google' ||
+      window.localStorage.getItem('admin-auth') === 'firebase' ||
+      user.email?.toLowerCase() === import.meta.env.VITE_ADMIN_EMAIL?.toLowerCase()
+    )
+  );
 
   return <>
         <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
@@ -282,7 +286,7 @@ function AppContent() {
                                   right: 0,
                                   marginTop: '10px',
                                   backgroundColor: '#ffffff',
-                                  minWidth: '160px',
+                                  minWidth: '180px',
                                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                                   borderRadius: '8px',
                                   padding: '4px 0',
@@ -290,6 +294,43 @@ function AppContent() {
                                   border: '1px solid #e2e8f0',
                                 }}
                               >
+                                {isAdminUser && (
+                                  <Link
+                                    to="/admin"
+                                    onClick={() => setIsDropdownOpen(false)}
+                                    style={{
+                                      width: '100%',
+                                      textAlign: 'left',
+                                      padding: '0.6rem 1rem',
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#111827',
+                                      cursor: 'pointer',
+                                      fontSize: '0.95rem',
+                                      fontWeight: 600,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      transition: 'background-color 0.2s ease',
+                                      textDecoration: 'none',
+                                      boxSizing: 'border-box',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+                                      <rect x="14" y="3" width="7" height="4" rx="2"></rect>
+                                      <rect x="14" y="13" width="7" height="8" rx="2"></rect>
+                                      <rect x="3" y="13" width="7" height="8" rx="2"></rect>
+                                    </svg>
+                                    <span>Admin Page</span>
+                                  </Link>
+                                )}
                                 <button
                                   type="button"
                                   onClick={handleLogout}
