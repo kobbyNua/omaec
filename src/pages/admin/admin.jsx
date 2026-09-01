@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, subscribeToAuthChanges } from '../../Authentication/auth';
+import { getBackendBase } from '../../utils/backend';
 import Sidebar from './sidebar';
 
 function AdminPage() {
@@ -26,7 +27,15 @@ function AdminPage() {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  const USERS_API_URL = 'http://127.0.0.1/media/api/user';
+  const USERS_API_URL = (() => {
+    const rawUrl = getBackendBase();
+    if (!rawUrl) {
+      return '/media/api/user';
+    }
+
+    const base = rawUrl.replace(/\/+$/g, '');
+    return `${base}/user`;
+  })();
 
   const getAdminIdToken = async () => {
     const currentUser = auth.currentUser;

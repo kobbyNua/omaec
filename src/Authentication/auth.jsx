@@ -15,6 +15,19 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
+// Expose auth to the global window for easier debugging in DevTools
+if (typeof window !== 'undefined') {
+  try {
+    window.auth = auth;
+    window.googleProvider = googleProvider;
+    // Small helpful log for debugging (only in developer consoles)
+    // eslint-disable-next-line no-console
+    console.debug('Firebase auth exposed as `window.auth` for debugging');
+  } catch (e) {
+    // ignore
+  }
+}
+
 export const getAuthErrorMessage = (error) => {
   const code = error?.code;
 

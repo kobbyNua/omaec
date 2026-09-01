@@ -65,14 +65,31 @@ function LoginPage() {
       const result = await loginWithGoogle();
       const signedInEmail = result?.user?.email?.toLowerCase();
 
+      // persist idToken for future API calls (so frontend can include it when auth.currentUser is not available)
+      let idToken = '';
+      try {
+        idToken = await result.user.getIdToken(true);
+      } catch (err) {
+        console.warn('Could not get idToken after Google sign-in', err);
+      }
+
       if (signedInEmail === adminEmail) {
         window.localStorage.setItem('admin-auth', 'google');
+        if (result.user?.uid) window.localStorage.setItem('admin-firebase-uid', result.user.uid);
+        if (idToken) window.localStorage.setItem('user-auth', JSON.stringify({ email: signedInEmail, token: idToken }));
         setUser(result.user);
         setMessage('Google login successful. Redirecting to the admin area...');
         navigate('/admin', { replace: true });
       } else {
-        await logoutUser();
-        setMessage('Only the configured admin Google account can access this page.');
+        // Allow non-admin Google users to remain signed in for actions that accept authenticated users.
+        // Persist a minimal `user-auth` object with email and token to be used by `getAuthorizationToken()`.
+        if (idToken) {
+          window.localStorage.setItem('user-auth', JSON.stringify({ email: signedInEmail, token: idToken }));
+        } else {
+          window.localStorage.setItem('user-auth', JSON.stringify({ email: signedInEmail }));
+        }
+        setUser(result.user);
+        setMessage('Google sign-in successful.');
       }
     } catch (error) {
       setMessage(error?.message || 'Google sign-in failed.');
@@ -83,8 +100,21 @@ function LoginPage() {
 
   const handleLogout = async () => {
     window.localStorage.removeItem('admin-auth');
+    window.localStorage.removeItem('user-auth');
+    window.localStorage.removeItem('admin-firebase-uid');
     await logoutUser();
     setMessage('You have signed out.');
+  };
+
+  const handleShowToken = async () => {
+    try {
+      const id = await (window.auth?.currentUser?.getIdToken ? window.auth.currentUser.getIdToken() : Promise.resolve(null));
+      console.log('firebase idToken (first80):', id ? id.slice(0,80) + '...' : null);
+    } catch (err) {
+      console.warn('Error fetching idToken from firebase currentUser', err);
+    }
+    console.log('local user-auth:', window.localStorage.getItem('user-auth'));
+    console.log('local admin-auth:', window.localStorage.getItem('admin-auth'));
   };
 
   return (
@@ -105,6 +135,9 @@ function LoginPage() {
             <p style={{ marginBottom: '1rem', color: '#111827' }}>You are signed in as {user.email}</p>
             <button type="button" onClick={handleLogout} style={{ width: '100%', padding: '0.8rem', border: 'none', borderRadius: '12px', background: '#111827', color: 'white', cursor: 'pointer' }}>
               Sign out
+            </button>
+            <button type="button" onClick={handleShowToken} style={{ width: '100%', marginTop: '0.5rem', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '12px', background: '#fff', color: '#111827', cursor: 'pointer' }}>
+              Show Token (debug)
             </button>
           </div>
         ) : (

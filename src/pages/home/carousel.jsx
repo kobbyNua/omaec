@@ -55,12 +55,23 @@ const getAuthorizationToken = async () => {
     const currentUser = auth.currentUser;
     if (currentUser) {
         try {
+            // Force refresh to avoid expired tokens on the live server
             const idToken = await currentUser.getIdToken(true);
             if (idToken) {
+                // Persist token for fallback during short-lived auth interruptions
+                try {
+                    const prev = JSON.parse(window.localStorage.getItem('user-auth') || 'null') || {};
+                    prev.token = idToken;
+                    prev.email = prev.email || currentUser.email || '';
+                    window.localStorage.setItem('user-auth', JSON.stringify(prev));
+                } catch (e) {
+                    // ignore localStorage write errors
+                }
+                console.debug('getAuthorizationToken: using refreshed Firebase idToken');
                 return `Bearer ${idToken}`;
             }
         } catch (error) {
-            console.warn('Unable to get Firebase token:', error);
+            console.warn('getAuthorizationToken: Unable to refresh Firebase token:', error);
         }
     }
 
@@ -69,18 +80,22 @@ const getAuthorizationToken = async () => {
         try {
             const parsedUser = JSON.parse(storedUser);
             if (parsedUser?.token) {
+                console.debug('getAuthorizationToken: using token from localStorage');
                 return `Bearer ${parsedUser.token}`;
             }
             if (parsedUser?.email) {
+                console.debug('getAuthorizationToken: using email fallback from localStorage');
                 return `Bearer user:${parsedUser.email}`;
             }
         } catch (error) {
-            console.warn('Unable to parse user-auth token:', error);
+            console.warn('getAuthorizationToken: Unable to parse user-auth token:', error);
         }
     }
 
+    console.debug('getAuthorizationToken: no token available');
     return '';
 };
+
 
 const resolveCarouselAssetUrl = (value) => {
     let src = value || '';
@@ -174,6 +189,9 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
             headers.Authorization = authToken;
         }
 
+        // Debug: log auth token being sent (safe for local debugging only)
+        console.debug('CreateCarouselModal: Authorization header:', authToken);
+
         const response = await fetch(`${BACKEND_API_URL}/home`, {
             method: 'POST',
             headers,
@@ -188,8 +206,11 @@ function CreateCarouselModal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger 
             setSelectedMediaType('image');
             setPreviewUrl('');
         } else {
-            const data = await response.json().catch(() => null);
-            setStatus(data?.message || 'Failed to create banner.');
+            const bodyText = await response.text().catch(() => null);
+            console.debug('CreateCarouselModal: POST /home failed', response.status, response.statusText, bodyText);
+            let data = null;
+            try { data = bodyText ? JSON.parse(bodyText) : null; } catch (e) { /* ignore parse */ }
+            setStatus(data?.message || bodyText || 'Failed to create banner.');
         }
     };
 
@@ -334,6 +355,9 @@ function Editcarouselmodal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger = 
             headers.Authorization = authToken;
         }
 
+        // Debug: log auth token for edit
+        console.debug('Editcarouselmodal: Authorization header:', authToken);
+
         const response = await fetch(`${BACKEND_API_URL}/home`, {
             method: 'PUT',
             headers,
@@ -343,8 +367,11 @@ function Editcarouselmodal({ isOpen: isOpenProp, onOpen, onClose, hideTrigger = 
         if (response.ok) {
             setStatus('Banner updated successfully.');
         } else {
-            const data = await response.json().catch(() => null);
-            setStatus(data?.message || 'Failed to update banner.');
+            const bodyText = await response.text().catch(() => null);
+            console.debug('Editcarouselmodal: PUT /home failed', response.status, response.statusText, bodyText);
+            let data = null;
+            try { data = bodyText ? JSON.parse(bodyText) : null; } catch (e) { /* ignore parse */ }
+            setStatus(data?.message || bodyText || 'Failed to update banner.');
         }
     };
 
